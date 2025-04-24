@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Material Database</title>
+  <link href="https://unpkg.com/tabulator-tables@5.6.1/dist/css/tabulator.min.css" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; background: #f2f2f2; }
+    #tabs { margin-bottom: 20px; }
+    .tab-button { padding: 10px 15px; margin-right: 5px; border: none; background: #007bff; color: white; cursor: pointer; }
+    .tab-button.active { background: #0056b3; }
+    #material-table { background: white; }
+  </style>
+</head>
+<body>
+  <h1>Material Database</h1>
+  <div id="tabs">
+    <button class="tab-button active" data-category="Metals">Metals</button>
+    <button class="tab-button" data-category="PlasticAcrylic">Plastic/Acrylic</button>
+    <button class="tab-button" data-category="LightLED">Light/LED</button>
+    <button class="tab-button" data-category="General">General Material</button>
+    <button class="tab-button" data-category="Paint">Paint</button>
+    <button class="tab-button" data-category="Vinyl">Vinyl/Sticker</button>
+  </div>
+  <div id="material-table"></div>
+
+  <script src="https://unpkg.com/tabulator-tables@5.6.1/dist/js/tabulator.min.js"></script>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

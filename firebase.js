@@ -1,11 +1,14 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyD7-xJxuJj0fVdqQG1_A0G3jYrON5vHrlQ",
+  apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
   authDomain: "signagematerialdatabaseapp.firebaseapp.com",
   databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
   projectId: "signagematerialdatabaseapp",
-  storageBucket: "signagematerialdatabaseapp.appspot.com",
-  messagingSenderId: "471449176777",
-  appId: "1:471449176777:web:7f576be671bcadfa68d7ab"
+  storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
+  messagingSenderId: "276886100857",
+  appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
+  measurementId: "G-R4EHYT0MW6"
 };
 
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);

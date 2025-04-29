@@ -2,35 +2,81 @@
 <html>
 <head>
   <title>Signage Calculator - Login</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 100px; }
-    input { margin: 5px; padding: 10px; width: 250px; }
-    button { padding: 10px 20px; }
-    .error { color: red; margin-top: 10px; }
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #333;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .error {
+      color: red;
+      text-align: center;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
-  <h2>Signage Calculator</h2>
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <div id="error-msg" class="error"></div>
+  <div class="login-box">
+    <h2>Signage Calculator</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Log In</button>
+    <div class="error" id="error"></div>
+  </div>
 
-<script>
-function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(() => location.href = "index.html")
-    .catch(error => {
-      const msg = error.code === "auth/user-not-found" ? "No user found." :
-                  error.code === "auth/wrong-password" ? "Incorrect password." : "Login failed.";
-      document.getElementById("error-msg").innerText = msg;
-    });
-}
-</script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script>
+    const auth = firebase.auth();
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          window.location.href = "index.html";
+        })
+        .catch((error) => {
+          if (error.code === 'auth/user-not-found') {
+            document.getElementById("error").textContent = "No user found.";
+          } else if (error.code === 'auth/wrong-password') {
+            document.getElementById("error").textContent = "Incorrect email or password.";
+          } else {
+            document.getElementById("error").textContent = error.message;
+          }
+        });
+    }
+  </script>
 </body>
 </html>

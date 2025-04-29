@@ -1,5 +1,4 @@
 // Replace the below with your Firebase project's config values
-<script>
 const firebaseConfig = {
   apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
   authDomain: "signagematerialdatabaseapp.firebaseapp.com",
@@ -11,4 +10,3 @@ const firebaseConfig = {
   measurementId: "G-R4EHYT0MW6"
 };
 firebase.initializeApp(firebaseConfig);
-</script>

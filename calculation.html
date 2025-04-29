@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Signage Calculator</title>
-  <script src="firebase.js"></script>
   <style>
     body { font-family: Arial; padding: 20px; }
     #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -31,11 +30,35 @@
   <button onclick="calculate()">Calculate</button>
   <div id="results"></div>
 
+  <!-- Firebase SDK and Configuration Inline -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+
   <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+      authDomain: "signagematerialdatabaseapp.firebaseapp.com",
+      databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
+      projectId: "signagematerialdatabaseapp",
+      storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
+      messagingSenderId: "276886100857",
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
+      measurementId: "G-R4EHYT0MW6"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+
+    // Check if user is logged in
     const user = sessionStorage.getItem("user");
     if (!user) location.href = "login.html";
     document.getElementById("userEmail").textContent = `Logged in as: ${user}`;
 
+    // Handle logout
     function logout() {
       firebase.auth().signOut().then(() => {
         sessionStorage.clear();
@@ -43,9 +66,9 @@
       });
     }
 
+    // Load materials from Firebase
     const materialSelect = document.getElementById("materialSelect");
     const db = firebase.database().ref("materials");
-
     const materialMap = {};
 
     db.on("value", snapshot => {
@@ -59,6 +82,7 @@
       });
     });
 
+    // Perform cost calculation
     function calculate() {
       const code = materialSelect.value;
       const mat = materialMap[code];
@@ -74,5 +98,6 @@
       `;
     }
   </script>
+
 </body>
 </html>

@@ -57,9 +57,9 @@
     <p id="error" class="error"></p>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
+  <!-- Firebase CDN links for v9 Modular SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.21.0/firebase-auth.js"></script>
   <script>
     // Firebase configuration
     const firebaseConfig = {
@@ -74,13 +74,14 @@
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
     function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
 
-      firebase.auth().signInWithEmailAndPassword(email, password)
+      auth.signInWithEmailAndPassword(email, password)
         .then((user) => {
           sessionStorage.setItem("user", email);
           if (email === "admin@example.com") {

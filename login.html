@@ -3,36 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <title>Signage Calculator - Login</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
-  <script src="firebase.js"></script>
   <style>
-    body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 50px; }
-    input, button { margin: 10px; padding: 10px; width: 250px; }
-    .error { color: red; }
+    body { font-family: Arial; display: flex; flex-direction: column; align-items: center; padding: 50px; }
+    .login-box { border: 1px solid #ccc; padding: 20px; width: 300px; }
+    input { width: 100%; padding: 8px; margin: 10px 0; }
+    button { width: 100%; padding: 8px; }
+    #error-msg { color: red; }
   </style>
 </head>
 <body>
-  <h2>Signage Calculator Login</h2>
-  <input type="email" id="email" placeholder="Email"><br>
-  <input type="password" id="password" placeholder="Password"><br>
-  <button onclick="login()">Login</button>
-  <p class="error" id="error"></p>
+  <h2>Signage Calculator - Login</h2>
+  <div class="login-box">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="error-msg"></p>
+  </div>
 
+  <script src="firebase.js"></script>
   <script>
-    const login = () => {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
+
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
-          window.location.href = "index.html";
+          document.getElementById('error-msg').textContent = 'Logging in...';
         })
         .catch(error => {
-          const msg = error.code === 'auth/user-not-found' ? 'No user found' :
-                      error.code === 'auth/wrong-password' ? 'Incorrect password' : error.message;
-          document.getElementById("error").textContent = msg;
+          if (error.code === 'auth/user-not-found') {
+            document.getElementById('error-msg').textContent = 'No user found.';
+          } else if (error.code === 'auth/wrong-password') {
+            document.getElementById('error-msg').textContent = 'Incorrect email or password.';
+          } else {
+            document.getElementById('error-msg').textContent = error.message;
+          }
         });
-    };
+    }
   </script>
 </body>
 </html>

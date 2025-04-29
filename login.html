@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signage Calculator - Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 100px; }
+    input { margin: 5px; padding: 10px; width: 250px; }
+    button { padding: 10px 20px; }
+    .error { color: red; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Signage Calculator</h2>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <div id="error-msg" class="error"></div>
+
+<script>
+function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  firebase.auth().signInWithEmailAndPassword(email, password)
+    .then(() => location.href = "index.html")
+    .catch(error => {
+      const msg = error.code === "auth/user-not-found" ? "No user found." :
+                  error.code === "auth/wrong-password" ? "Incorrect password." : "Login failed.";
+      document.getElementById("error-msg").innerText = msg;
+    });
+}
+</script>
+</body>
+</html>

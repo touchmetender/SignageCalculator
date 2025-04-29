@@ -1,33 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Calculation - Signage Calculator</title>
+  <title>Signage Calculator</title>
+  <script src="firebase.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    label, input, select { display: block; margin: 10px 0; width: 100%; max-width: 400px; }
+    #results { margin-top: 20px; font-weight: bold; }
+  </style>
 </head>
 <body>
-  <header>
-    <strong>Calculation</strong> |
-    <a href="index.html">Database</a>
-    <a href="quotation.html">Quotation</a>
-    <span style="float:right">
-      Logged in as: <span id="userEmail">Loading...</span>
+  <div id="header">
+    <h2>Signage Cost Calculator</h2>
+    <div>
+      <span id="userEmail"></span>
       <button onclick="logout()">Logout</button>
-    </span>
-  </header>
+      <button onclick="window.location.href='index.html'">Material DB</button>
+    </div>
+  </div>
 
-  <h3>Sample Calculator Coming Soon</h3>
+  <label>Reference No: <input id="refNo" /></label>
+  <label>Material:
+    <select id="materialSelect"></select>
+  </label>
+  <label>Length (m): <input type="number" id="length" /></label>
+  <label>Width (m): <input type="number" id="width" /></label>
+  <label>Quantity: <input type="number" id="qty" value="1" /></label>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="firebase.js"></script>
+  <button onclick="calculate()">Calculate</button>
+  <div id="results"></div>
+
   <script>
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) location.href = "login.html";
-      else document.getElementById('userEmail').textContent = user.email;
-    });
+    const user = sessionStorage.getItem("user");
+    if (!user) location.href = "login.html";
+    document.getElementById("userEmail").textContent = `Logged in as: ${user}`;
 
     function logout() {
-      firebase.auth().signOut().then(() => location.href = "login.html");
+      firebase.auth().signOut().then(() => {
+        sessionStorage.clear();
+        window.location.href = "login.html";
+      });
+    }
+
+    const materialSelect = document.getElementById("materialSelect");
+    const db = firebase.database().ref("materials");
+
+    const materialMap = {};
+
+    db.on("value", snapshot => {
+      snapshot.forEach(row => {
+        const mat = row.val();
+        materialMap[mat.code] = mat;
+        const opt = document.createElement("option");
+        opt.value = mat.code;
+        opt.text = `${mat.code} - ${mat.name}`;
+        materialSelect.appendChild(opt);
+      });
+    });
+
+    function calculate() {
+      const code = materialSelect.value;
+      const mat = materialMap[code];
+      const area = parseFloat(document.getElementById("length").value || 0) * parseFloat(document.getElementById("width").value || 0);
+      const qty = parseFloat(document.getElementById("qty").value || 1);
+      const cost = mat.unit2 === "m^2" ? mat.pricePerUnit * area * qty : mat.price * qty;
+
+      document.getElementById("results").innerHTML = `
+        Material: ${mat.name}<br>
+        Area: ${area.toFixed(2)} ${mat.unit2}<br>
+        Quantity: ${qty}<br>
+        Total Cost: <strong>QAR ${cost.toFixed(2)}</strong>
+      `;
     }
   </script>
 </body>

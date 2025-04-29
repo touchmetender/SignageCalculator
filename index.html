@@ -1,161 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator - Calculation</title>
+  <meta charset="UTF-8">
+  <title>Material Database - Signage Calculator</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .user-info { font-size: 0.9rem; }
-    input, select, button { padding: 6px; margin: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f5f5f5; }
+    body { font-family: sans-serif; margin: 0; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: #333;
+      color: white;
+    }
+    header a { color: white; text-decoration: none; margin-left: 15px; }
+    .table-container {
+      overflow-y: auto;
+      max-height: 85vh;
+      border-top: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+    }
+    thead {
+      position: sticky;
+      top: 0;
+      background: #eee;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h2>Signage Calculator</h2>
-    <div class="user-info">
-      <span id="user-email">Logged in as: ...</span>
+    <div>
+      <strong>Material Database</strong> |
+      <a href="calculation.html">Calculation</a>
+      <a href="quotation.html">Quotation</a>
+    </div>
+    <div>
+      Logged in as: <span id="userEmail">Loading...</span>
       <button onclick="logout()">Logout</button>
     </div>
   </header>
 
-  <nav>
-    <a href="index.html">📦 Material DB</a> |
-    <a href="calculation.html">🧮 Calculation</a> |
-    <a href="quotation.html">📄 Quotation (Coming Soon)</a>
-  </nav>
+  <div class="table-container">
+    <table id="materialTable">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Unit</th>
+          <th>Price per Unit</th>
+          <th>Unit Type</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-  <hr>
-
-  <label>Reference #: <input type="text" id="refNo" placeholder="Enter reference name"></label><br>
-
-  <table id="calc-table">
-    <thead>
-      <tr>
-        <th>Material</th>
-        <th>Length</th>
-        <th>Width</th>
-        <th>Qty</th>
-        <th>Price/Unit</th>
-        <th>Unit</th>
-        <th>Total</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <button onclick="addRow()">➕ Add Row</button>
-  <button onclick="saveCalculation()">💾 Save</button>
-
-  <h3>Total Estimate: <span id="grandTotal">0</span></h3>
-
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script src="firebase.js"></script>
   <script>
-    let materials = {};
-    let userEmail = "";
-
     firebase.auth().onAuthStateChanged(user => {
-      if (!user) return window.location.href = "login.html";
-      userEmail = user.email;
-      document.getElementById('user-email').textContent = 'Logged in as: ' + userEmail;
-      loadMaterials();
+      if (!user) location.href = "login.html";
+      else {
+        document.getElementById('userEmail').textContent = user.email;
+        loadTable(user);
+      }
     });
 
     function logout() {
-      firebase.auth().signOut().then(() => window.location.href = "login.html");
+      firebase.auth().signOut().then(() => location.href = "login.html");
     }
 
-    function loadMaterials() {
-      firebase.database().ref("materials").once("value").then(snapshot => {
-        materials = snapshot.val() || {};
+    function loadTable(user) {
+      const admin = ["your-admin-email@gmail.com"]; // replace with your admin email
+      const isAdmin = admin.includes(user.email);
+      firebase.database().ref("materials").on("value", snapshot => {
+        const tbody = document.querySelector("#materialTable tbody");
+        tbody.innerHTML = "";
+        snapshot.forEach(catSnap => {
+          catSnap.forEach(item => {
+            const tr = document.createElement("tr");
+            const data = item.val();
+            tr.innerHTML = `
+              <td>${data.code}</td>
+              <td>${data.name}</td>
+              <td>${data.price}</td>
+              <td>${data.unit}</td>
+              <td>${data.pricePerUnit}</td>
+              <td>${data.unitType}</td>
+              <td>${isAdmin ? '<button>Edit</button>' : 'View only'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        });
       });
-    }
-
-    function addRow() {
-      const row = document.createElement("tr");
-
-      const select = document.createElement("select");
-      for (const [cat, list] of Object.entries(materials)) {
-        for (const [code, mat] of Object.entries(list)) {
-          const opt = document.createElement("option");
-          opt.value = code;
-          opt.text = `${mat.name} (${mat.unit_price}/${mat.unit})`;
-          select.appendChild(opt);
-        }
-      }
-
-      select.onchange = () => updateRowPrice(row, select.value);
-
-      row.innerHTML = `
-        <td></td>
-        <td><input type="number" step="0.01" value="1" onchange="updateCalc()"></td>
-        <td><input type="number" step="0.01" value="1" onchange="updateCalc()"></td>
-        <td><input type="number" step="1" value="1" onchange="updateCalc()"></td>
-        <td class="price">0</td>
-        <td class="unit">-</td>
-        <td class="total">0</td>
-        <td><button onclick="this.closest('tr').remove(); updateCalc();">🗑</button></td>
-      `;
-      row.cells[0].appendChild(select);
-      document.querySelector("#calc-table tbody").appendChild(row);
-      updateRowPrice(row, select.value);
-    }
-
-    function updateRowPrice(row, code) {
-      for (const category of Object.values(materials)) {
-        if (category[code]) {
-          const mat = category[code];
-          row.querySelector(".price").textContent = mat.unit_price;
-          row.querySelector(".unit").textContent = mat.unit;
-          updateCalc();
-          return;
-        }
-      }
-    }
-
-    function updateCalc() {
-      let total = 0;
-      document.querySelectorAll("#calc-table tbody tr").forEach(row => {
-        const len = parseFloat(row.cells[1].querySelector("input").value) || 0;
-        const wid = parseFloat(row.cells[2].querySelector("input").value) || 0;
-        const qty = parseFloat(row.cells[3].querySelector("input").value) || 0;
-        const price = parseFloat(row.querySelector(".price").textContent) || 0;
-        const unit = row.querySelector(".unit").textContent;
-
-        let result = unit === "m^2" ? (len * wid * qty * price) : (qty * price);
-        row.querySelector(".total").textContent = result.toFixed(2);
-        total += result;
-      });
-      document.getElementById("grandTotal").textContent = total.toFixed(2);
-    }
-
-    function saveCalculation() {
-      const ref = document.getElementById("refNo").value.trim();
-      if (!ref) return alert("Enter reference number");
-
-      const rows = [];
-      document.querySelectorAll("#calc-table tbody tr").forEach(row => {
-        const code = row.cells[0].querySelector("select").value;
-        const length = row.cells[1].querySelector("input").value;
-        const width = row.cells[2].querySelector("input").value;
-        const qty = row.cells[3].querySelector("input").value;
-        const unit = row.querySelector(".unit").textContent;
-        const price = row.querySelector(".price").textContent;
-        const total = row.querySelector(".total").textContent;
-
-        rows.push({ code, length, width, qty, unit, price, total });
-      });
-
-      firebase.database().ref("calculations/" + ref).set({
-        user: userEmail,
-        total: document.getElementById("grandTotal").textContent,
-        items: rows
-      }).then(() => alert("Saved!"));
     }
   </script>
 </body>

@@ -1,47 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Signage Calculator - Login</title>
   <style>
-    body { font-family: Arial; display: flex; flex-direction: column; align-items: center; padding: 50px; }
-    .login-box { border: 1px solid #ccc; padding: 20px; width: 300px; }
-    input { width: 100%; padding: 8px; margin: 10px 0; }
-    button { width: 100%; padding: 8px; }
-    #error-msg { color: red; }
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+    .login-box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+    }
   </style>
 </head>
 <body>
-  <h2>Signage Calculator - Login</h2>
   <div class="login-box">
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+    <h2>Signage Calculator</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
     <button onclick="login()">Login</button>
-    <p id="error-msg"></p>
+    <p id="error" style="color:red;"></p>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script src="firebase.js"></script>
   <script>
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) window.location.href = "index.html";
-    });
-
     function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(() => {
-          document.getElementById('error-msg').textContent = 'Logging in...';
+          location.href = "index.html";
         })
         .catch(error => {
-          if (error.code === 'auth/user-not-found') {
-            document.getElementById('error-msg').textContent = 'No user found.';
-          } else if (error.code === 'auth/wrong-password') {
-            document.getElementById('error-msg').textContent = 'Incorrect email or password.';
-          } else {
-            document.getElementById('error-msg').textContent = error.message;
-          }
+          document.getElementById('error').innerText = error.message;
         });
     }
   </script>

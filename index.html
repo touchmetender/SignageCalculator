@@ -1,113 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Material Database</title>
+  <title>Material Database - Signage Calculator</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+  <script src="firebase.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 0; }
-    header { background: #333; color: white; padding: 10px; display: flex; justify-content: space-between; }
+    body { font-family: Arial; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    #user-info { font-size: 14px; }
     table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 5px; }
-    th { background: #eee; position: sticky; top: 0; z-index: 1; }
-    tbody { display: block; max-height: 400px; overflow-y: auto; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    tbody { display: block; height: 400px; overflow-y: auto; }
     thead, tbody tr { display: table; width: 100%; table-layout: fixed; }
-    .admin-controls { margin: 10px; }
+    .edit-row { background-color: #ffffcc; }
   </style>
 </head>
 <body>
   <header>
-    <div>Signage Calculator - Materials</div>
-    <div id="auth-status">Logged in as: <span id="user-email"></span> | <button onclick="logout()">Logout</button></div>
+    <div><b>Material Database</b></div>
+    <div id="user-info">Logged in as: <span id="user-email"></span> | <button onclick="logout()">Logout</button></div>
   </header>
-  
-  <div class="admin-controls" id="admin-actions" style="display: none;">
-    <button onclick="addCategory()">Add Category</button>
-    <button onclick="addMaterial()">Add Material</button>
-  </div>
-
+  <div><a href="calculation.html">Go to Calculator</a></div>
   <table>
     <thead>
-      <tr>
-        <th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Per Unit</th><th>Unit 2</th><th>Action</th>
-      </tr>
+      <tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Per Unit</th><th>Unit</th><th>Action</th></tr>
     </thead>
-    <tbody id="material-body"></tbody>
+    <tbody id="material-table"></tbody>
   </table>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="firebase.js"></script>
   <script>
-    const adminEmail = "admin@example.com";
-    let currentUser;
+    const db = firebase.database();
+    let currentUser = null;
 
     firebase.auth().onAuthStateChanged(user => {
       if (!user) return window.location.href = "login.html";
       currentUser = user;
-      document.getElementById("user-email").textContent = user.email;
-      if (user.email === adminEmail) {
-        document.getElementById("admin-actions").style.display = "block";
-      }
+      document.getElementById('user-email').textContent = user.email;
       loadMaterials();
     });
 
-    function logout() {
-      firebase.auth().signOut().then(() => window.location.href = "login.html");
-    }
-
     function loadMaterials() {
-      const ref = firebase.database().ref("materials");
-      ref.on("value", snapshot => {
-        const tbody = document.getElementById("material-body");
+      db.ref('materials').on('value', snapshot => {
+        const tbody = document.getElementById("material-table");
         tbody.innerHTML = "";
         snapshot.forEach(cat => {
-          cat.forEach(mat => {
-            const m = mat.val();
-            const row = document.createElement("tr");
-            row.innerHTML = `
-              <td>${m.code}</td><td>${m.name}</td><td>${m.price}</td><td>${m.unit}</td>
-              <td>${m.perUnit}</td><td>${m.unit2}</td>
-              <td>${currentUser.email === adminEmail ? `<button onclick="editMaterial('${cat.key}','${mat.key}')">Edit</button>` : ''}</td>
+          cat.forEach(item => {
+            const val = item.val();
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${item.key}</td>
+              <td>${val.name}</td>
+              <td contenteditable="${isAdmin()}">${val.price}</td>
+              <td>${val.unit}</td>
+              <td contenteditable="${isAdmin()}">${val.pricePerUnit}</td>
+              <td>${val.perUnit}</td>
+              <td>${isAdmin() ? `<button onclick="save('${cat.key}','${item.key}', this)">Save</button>` : ''}</td>
             `;
-            tbody.appendChild(row);
+            tbody.appendChild(tr);
           });
         });
       });
     }
 
-    function addCategory() {
-      const name = prompt("New Category:");
-      if (name) firebase.database().ref("materials/" + name).set({});
+    function save(cat, key, btn) {
+      const row = btn.parentElement.parentElement;
+      const price = row.cells[2].textContent;
+      const pricePerUnit = row.cells[4].textContent;
+      db.ref(`materials/${cat}/${key}`).update({ price: parseFloat(price), pricePerUnit: parseFloat(pricePerUnit) });
+      row.classList.remove("edit-row");
     }
 
-    function addMaterial() {
-      const category = prompt("Enter Category:");
-      const data = {
-        code: prompt("Code:"),
-        name: prompt("Name:"),
-        price: prompt("Price:"),
-        unit: prompt("Unit:"),
-        perUnit: prompt("Per Unit:"),
-        unit2: prompt("Unit 2:")
-      };
-      firebase.database().ref(`materials/${category}`).push(data);
+    function isAdmin() {
+      return currentUser.email === 'your-admin-email@example.com';
     }
 
-    function editMaterial(cat, key) {
-      const ref = firebase.database().ref(`materials/${cat}/${key}`);
-      ref.once("value", snap => {
-        const m = snap.val();
-        const updated = {
-          code: prompt("Code:", m.code),
-          name: prompt("Name:", m.name),
-          price: prompt("Price:", m.price),
-          unit: prompt("Unit:", m.unit),
-          perUnit: prompt("Per Unit:", m.perUnit),
-          unit2: prompt("Unit 2:", m.unit2)
-        };
-        ref.set(updated);
-      });
+    function logout() {
+      firebase.auth().signOut().then(() => window.location.href = "login.html");
     }
   </script>
 </body>

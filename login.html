@@ -81,7 +81,7 @@
     auth.onAuthStateChanged((user) => {
       if (user) {
         const email = user.email;
-        const role = (email === "admin@example.com") ? "admin" : "user";
+        const role = (email === "admin@sc.com") ? "admin" : "user";
         sessionStorage.setItem("user", email);
         sessionStorage.setItem("role", role);
         window.location.href = "index.html";

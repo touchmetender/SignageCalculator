@@ -1,91 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Material Database</title>
-  <script src="firebase.js"></script>
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    #materialTable { border-collapse: collapse; width: 100%; }
-    #materialTable th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    #materialTable th { background: #eee; }
-    tbody { display: block; height: 400px; overflow-y: auto; }
-    thead, tbody tr { display: table; width: 100%; table-layout: fixed; }
-    .edit-row { background: #ffffcc; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="header">
-    <h2>Material Database</h2>
-    <div>
-      <span id="userEmail"></span>
-      <button onclick="logout()">Logout</button>
-      <button onclick="window.location.href='calculation.html'">Go to Calculation</button>
+
+    <div id="welcome-container">
+        <h2>Welcome to the Signage Calculator</h2>
+        <button id="logout-btn">Logout</button>
     </div>
-  </div>
 
-  <table id="materialTable">
-    <thead>
-      <tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Unit</th><th>Action</th></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+    <!-- Firebase SDK and Configuration -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-  <script>
-    const user = sessionStorage.getItem("user");
-    const role = sessionStorage.getItem("role");
-    if (!user) location.href = "login.html";
-    document.getElementById("userEmail").textContent = `Logged in as: ${user}`;
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+            authDomain: "signagematerialdatabaseapp.firebaseapp.com",
+            databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
+            projectId: "signagematerialdatabaseapp",
+            storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
+            messagingSenderId: "276886100857",
+            appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
+            measurementId: "G-R4EHYT0MW6"
+        };
 
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        sessionStorage.clear();
-        window.location.href = "login.html";
-      });
-    }
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
 
-    const db = firebase.database().ref("materials");
+        // Handle user authentication state
+        auth.onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'login.html'; // Redirect to login if not authenticated
+            }
+        });
 
-    db.on("value", snapshot => {
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = "";
-      snapshot.forEach(row => {
-        const mat = row.val();
-        const key = row.key;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${mat.code}</td>
-          <td><input value="${mat.name}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td><input value="${mat.price}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td>${mat.unit}</td>
-          <td><input value="${mat.pricePerUnit}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td>${mat.unit2}</td>
-          <td>
-            ${role === 'admin' ? `<button onclick="save('${key}', this)">Save</button><button onclick="remove('${key}')">Delete</button>` : ''}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
+        // Handle logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            auth.signOut().then(() => {
+                window.location.href = 'login.html'; // Redirect to login after logout
+            });
+        });
+    </script>
 
-    function save(key, btn) {
-      const row = btn.parentElement.parentElement;
-      const inputs = row.querySelectorAll('input');
-      db.child(key).set({
-        code: row.cells[0].textContent,
-        name: inputs[0].value,
-        price: inputs[1].value,
-        unit: row.cells[3].textContent,
-        pricePerUnit: inputs[2].value,
-        unit2: row.cells[5].textContent,
-      });
-    }
-
-    function remove(key) {
-      if (confirm("Delete this item?")) {
-        db.child(key).remove();
-      }
-    }
-  </script>
 </body>
 </html>

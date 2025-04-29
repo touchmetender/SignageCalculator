@@ -1,21 +1,25 @@
 // firebase.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-
 const firebaseConfig = {
-  apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+  apiKey: "AIzaSyDZHl03Lrk0onP4ZAfzK2gCoAvRljkVfIw",
   authDomain: "signagematerialdatabaseapp.firebaseapp.com",
   databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
   projectId: "signagematerialdatabaseapp",
-  storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
-  messagingSenderId: "276886100857",
-  appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
+  storageBucket: "signagematerialdatabaseapp.appspot.com",
+  messagingSenderId: "984103840861",
+  appId: "1:984103840861:web:4c26e11c92f64acb65d2f8"
 };
 
-const app = initializeApp(firebaseConfig);
-const firebase = {
-  auth: getAuth(app),
-  database: getDatabase(app)
-};
-window.firebase = firebase;
+firebase.initializeApp(firebaseConfig);
+
+function logout() {
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  });
+}
+
+firebase.auth().onAuthStateChanged(user => {
+  const userInfo = document.getElementById('user-info');
+  if (user && userInfo) {
+    userInfo.textContent = `Logged in as: ${user.email}`;
+  }
+});

@@ -1,50 +1,197 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Signage Calculator - Material Database</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signage Material Database</title>
   <style>
-    body { font-family: Arial; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-    th { background-color: #eee; }
-    #logout { float: right; margin-top: -30px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    h1 { background: #333; color: #fff; padding: 10px; margin: 0; }
+    #user-info { position: absolute; top: 10px; right: 20px; color: white; }
+    .container { padding: 10px; }
+    table { border-collapse: collapse; width: 100%; }
+    thead th { position: sticky; top: 0; background: #eee; z-index: 2; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    tbody { display: block; height: 400px; overflow-y: auto; }
+    thead, tbody tr { display: table; width: 100%; table-layout: fixed; }
+    .edit-row { background-color: #ffffcc; }
+    button { margin: 2px; }
+    .filters input { width: 100%; padding: 4px; box-sizing: border-box; }
   </style>
 </head>
 <body>
-  <h2>Material Database <a href="calculation.html">Go to Calculation</a></h2>
-  <div id="user-info"></div>
-  <button id="logout">Logout</button>
-  <table id="materialTable">
-    <thead>
-      <tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Measure Unit</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <h1>Signage Material Database</h1>
+  <div id="user-info">
+    Logged in as: <span id="user-email"></span>
+    <button onclick="logout()">Sign Out</button>
+  </div>
+  <div class="container">
+    <div id="material-controls">
+      <button onclick="addCategory()">Add Category</button>
+    </div>
+    <div id="materials-container"></div>
+  </div>
 
-<script>
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) location.href = "login.html";
-  else {
-    document.getElementById("user-info").innerText = "Logged in as: " + user.email;
-  }
-});
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script>
+    const db = firebase.database();
+    const auth = firebase.auth();
+    let currentUser = null;
+    let isAdmin = false;
 
-document.getElementById("logout").onclick = () => firebase.auth().signOut();
+    auth.onAuthStateChanged(user => {
+      if (!user) return window.location.href = 'login.html';
+      currentUser = user;
+      document.getElementById("user-email").textContent = user.email;
+      isAdmin = user.email === "admin@example.com";
+      if (!isAdmin) document.getElementById("material-controls").style.display = "none";
+      loadMaterials();
+    });
 
-firebase.database().ref("materials").once("value").then(snapshot => {
-  const tbody = document.querySelector("#materialTable tbody");
-  const data = snapshot.val();
-  for (let id in data) {
-    const row = data[id];
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${row.code}</td><td>${row.name}</td><td>${row.price}</td><td>${row.unit}</td><td>${row.pricePerUnit}</td><td>${row.measureUnit}</td>`;
-    tbody.appendChild(tr);
-  }
-});
-</script>
+    function logout() {
+      auth.signOut().then(() => window.location.href = 'login.html');
+    }
+
+    function loadMaterials() {
+      db.ref("materials").on("value", snapshot => {
+        const data = snapshot.val() || {};
+        const container = document.getElementById("materials-container");
+        container.innerHTML = "";
+        Object.entries(data).forEach(([category, materials]) => {
+          const section = document.createElement("div");
+          const title = document.createElement("h2");
+          title.textContent = category;
+
+          if (isAdmin) {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete Category";
+            deleteBtn.onclick = () => deleteCategory(category);
+            title.appendChild(deleteBtn);
+          }
+
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
+          thead.innerHTML = `
+            <tr>
+              <th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Measure</th>
+              ${isAdmin ? "<th>Actions</th>" : ""}
+            </tr>
+            <tr class="filters">
+              <th><input oninput="filter()" placeholder="Filter Code"></th>
+              <th><input oninput="filter()" placeholder="Filter Name"></th>
+              <th></th><th></th><th></th><th></th>
+              ${isAdmin ? "<th></th>" : ""}
+            </tr>
+          `;
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          Object.entries(materials).forEach(([code, material]) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${code}</td>
+              <td>${material.name}</td>
+              <td>${material.price}</td>
+              <td>${material.unit}</td>
+              <td>${material.pricePerUnit}</td>
+              <td>${material.measure}</td>
+            `;
+            if (isAdmin) {
+              const actionTd = document.createElement("td");
+              const editBtn = document.createElement("button");
+              editBtn.textContent = "Edit";
+              editBtn.onclick = () => editRow(tr, category, code, material);
+              const deleteBtn = document.createElement("button");
+              deleteBtn.textContent = "Delete";
+              deleteBtn.onclick = () => deleteMaterial(category, code);
+              actionTd.append(editBtn, deleteBtn);
+              tr.appendChild(actionTd);
+            }
+            tbody.appendChild(tr);
+          });
+
+          if (isAdmin) {
+            const addTr = document.createElement("tr");
+            addTr.innerHTML = `
+              <td><input id="code-${category}"></td>
+              <td><input id="name-${category}"></td>
+              <td><input id="price-${category}"></td>
+              <td><input id="unit-${category}"></td>
+              <td><input id="ppu-${category}"></td>
+              <td><input id="measure-${category}"></td>
+              <td><button onclick="addMaterial('${category}')">Add</button></td>
+            `;
+            tbody.appendChild(addTr);
+          }
+
+          table.appendChild(tbody);
+          section.appendChild(title);
+          section.appendChild(table);
+          container.appendChild(section);
+        });
+      });
+    }
+
+    function addCategory() {
+      const name = prompt("Enter new category name:");
+      if (name) db.ref("materials/" + name).set({});
+    }
+
+    function deleteCategory(name) {
+      if (confirm("Delete category " + name + "?")) db.ref("materials/" + name).remove();
+    }
+
+    function addMaterial(category) {
+      const code = document.getElementById("code-" + category).value;
+      const name = document.getElementById("name-" + category).value;
+      const price = document.getElementById("price-" + category).value;
+      const unit = document.getElementById("unit-" + category).value;
+      const ppu = document.getElementById("ppu-" + category).value;
+      const measure = document.getElementById("measure-" + category).value;
+      db.ref(`materials/${category}/${code}`).set({
+        name, price, unit, pricePerUnit: ppu, measure
+      });
+    }
+
+    function deleteMaterial(category, code) {
+      if (confirm("Delete material " + code + "?")) db.ref(`materials/${category}/${code}`).remove();
+    }
+
+    function editRow(tr, category, code, material) {
+      tr.classList.add("edit-row");
+      tr.innerHTML = `
+        <td>${code}</td>
+        <td><input value="${material.name}"></td>
+        <td><input value="${material.price}"></td>
+        <td><input value="${material.unit}"></td>
+        <td><input value="${material.pricePerUnit}"></td>
+        <td><input value="${material.measure}"></td>
+        <td>
+          <button onclick="saveRow(this, '${category}', '${code}')">Save</button>
+        </td>
+      `;
+    }
+
+    function saveRow(btn, category, code) {
+      const row = btn.closest("tr");
+      const inputs = row.querySelectorAll("input");
+      const [name, price, unit, ppu, measure] = [...inputs].map(i => i.value);
+      db.ref(`materials/${category}/${code}`).set({ name, price, unit, pricePerUnit: ppu, measure });
+    }
+
+    function filter() {
+      const filters = document.querySelectorAll(".filters input");
+      const keywordCode = filters[0].value.toLowerCase();
+      const keywordName = filters[1].value.toLowerCase();
+      document.querySelectorAll("tbody tr").forEach(row => {
+        const code = row.cells[0]?.textContent?.toLowerCase() || "";
+        const name = row.cells[1]?.textContent?.toLowerCase() || "";
+        row.style.display = code.includes(keywordCode) && name.includes(keywordName) ? "" : "none";
+      });
+    }
+  </script>
 </body>
 </html>

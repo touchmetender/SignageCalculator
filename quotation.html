@@ -1,25 +1,34 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Quotation - Coming Soon</title>
+  <meta charset="UTF-8" />
+  <title>Calculation - Signage Calculator</title>
 </head>
 <body>
-  <header style="display:flex; justify-content:space-between; align-items:center;">
-    <h2>Signage Calculator</h2>
-    <div>
-      <span id="user-info">Logged in as: </span>
+  <header>
+    <strong>Calculation</strong> |
+    <a href="index.html">Database</a>
+    <a href="quotation.html">Quotation</a>
+    <span style="float:right">
+      Logged in as: <span id="userEmail">Loading...</span>
       <button onclick="logout()">Logout</button>
-    </div>
+    </span>
   </header>
-  <nav>
-    <a href="index.html">📦 Material DB</a> |
-    <a href="calculation.html">🧮 Calculation</a> |
-    <a href="quotation.html">📄 Quotation</a>
-  </nav>
-  <hr>
-  <h3>Quotation Page - Coming Soon</h3>
 
+  <h3>Sample Calculator Coming Soon</h3>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="firebase.js"></script>
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) location.href = "login.html";
+      else document.getElementById('userEmail').textContent = user.email;
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => location.href = "login.html");
+    }
+  </script>
 </body>
 </html>

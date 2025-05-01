@@ -1,57 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <title>Signage Calculator - Database</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signage Calculator - Material Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Global Styles */
-    * {
-      box-sizing: border-box;
+    :root {
+      --bg: #1e1e1e;
+      --text: #ffffff;
+      --primary: #ff9800;
+      --secondary: #333;
+    }
+
+    [data-theme="light"] {
+      --bg: #f4f4f4;
+      --text: #111;
+      --primary: #ff9800;
+      --secondary: #fff;
     }
 
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: #fff;
-    }
-
-    .light-mode {
-      background-color: #f4f4f4;
-      color: #000;
+      background: var(--bg);
+      color: var(--text);
     }
 
     header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
+      background: var(--secondary);
       padding: 10px 20px;
-      background-color: #1f1f1f;
-      color: #fff;
-      border-bottom: 1px solid #444;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    .light-mode header {
-      background-color: #fff;
-      color: #000;
-      border-color: #ddd;
-    }
-
-    .nav-left {
-      font-size: 20px;
+    .logo {
+      font-size: 1.2rem;
       font-weight: bold;
     }
 
-    .nav-right a {
-      color: inherit;
-      text-decoration: none;
-      margin-left: 15px;
+    nav {
+      display: flex;
+      gap: 20px;
     }
 
-    .nav-right {
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .auth {
       display: flex;
+      gap: 10px;
       align-items: center;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .table-container {
+      overflow-y: auto;
+      max-height: 70vh;
+      border: 1px solid var(--primary);
+      margin-top: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid var(--primary);
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+    }
+
+    .edit-highlight {
+      background: #ffe082;
+    }
+
+    .toggle-theme {
+      cursor: pointer;
+      padding: 5px 10px;
+      background: var(--primary);
+      color: #000;
+      border: none;
+      border-radius: 5px;
     }
 
     .dropdown {
@@ -61,253 +105,177 @@
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #333;
-      min-width: 100px;
       right: 0;
-      z-index: 1;
-    }
-
-    .dropdown-content a {
-      color: #fff;
-      padding: 8px 12px;
-      display: block;
+      background-color: var(--secondary);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      padding: 10px;
     }
 
     .dropdown:hover .dropdown-content {
       display: block;
     }
-
-    .light-mode .dropdown-content {
-      background-color: #f4f4f4;
-    }
-
-    .toggle-btn {
-      margin-left: 20px;
-      cursor: pointer;
-      padding: 5px 10px;
-      background-color: #444;
-      border: none;
-      color: #fff;
-    }
-
-    .light-mode .toggle-btn {
-      background-color: #ccc;
-      color: #000;
-    }
-
-    .auth-info {
-      font-size: 14px;
-      margin-left: 20px;
-    }
-
-    /* Table Styles */
-    .table-wrapper {
-      margin: 20px;
-      border: 1px solid #444;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: inherit;
-    }
-
-    thead {
-      position: sticky;
-      top: 0;
-      background-color: #222;
-    }
-
-    .light-mode thead {
-      background-color: #eee;
-    }
-
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #444;
-    }
-
-    tr.editing {
-      background-color: #333;
-    }
-
-    .light-mode tr.editing {
-      background-color: #e0e0e0;
-    }
-
-    /* Action Buttons */
-    .action-btn {
-      margin: 5px;
-      padding: 5px 10px;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-    }
-
-    .add-btn {
-      background-color: #4caf50;
-      color: white;
-    }
-
-    .delete-btn {
-      background-color: #f44336;
-      color: white;
-    }
-
-    .save-btn {
-      background-color: #2196f3;
-      color: white;
-    }
-
-    .edit-btn {
-      background-color: #ff9800;
-      color: white;
-    }
-
-    /* Filter Section */
-    .filter-section {
-      margin: 20px;
-    }
-
-    .filter-section input {
-      padding: 6px;
-      width: 250px;
-    }
-
-    .category-heading {
-      margin-top: 30px;
-      font-size: 18px;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="nav-left">Signage Calculator</div>
-    <div class="nav-right">
-      <a href="index.html">Database</a>
-      <a href="calculation.html">Calculation</a>
-      <a href="quotation.html">Quotation</a>
-      <div class="dropdown">
-        <a href="#">More ▼</a>
-        <div class="dropdown-content">
-          <a href="#">Coming Soon</a>
-        </div>
-      </div>
-      <button class="toggle-btn" onclick="toggleDarkMode()">🌙</button>
-      <div class="auth-info" id="authInfo"></div>
-      <button class="toggle-btn" onclick="logout()">Logout</button>
+
+<header>
+  <div class="logo">Signage Calculator</div>
+  <nav>
+    <a href="index.html">Database</a>
+    <a href="calculation.html">Calculation</a>
+    <a href="quotation.html">Quotation</a>
+    <div class="dropdown">
+      <a href="#">More ⏷</a>
+      <div class="dropdown-content">Coming Soon</div>
     </div>
-  </header>
-
-  <div class="filter-section">
-    <input type="text" id="filterInput" placeholder="Filter materials by name..." onkeyup="filterMaterials()" />
+  </nav>
+  <div class="auth">
+    <span id="user-email">Logged in as: </span>
+    <button onclick="logout()">Logout</button>
+    <button class="toggle-theme" onclick="toggleTheme()">🌙/☀️</button>
   </div>
+</header>
 
-  <div id="materialContainer" class="table-wrapper">
-    <!-- Material tables will be inserted here -->
+<div class="container">
+  <h2>Material Database</h2>
+  <div>
+    <button onclick="addCategory()">Add Category</button>
+    <button onclick="addMaterial()">Add Material</button>
   </div>
+  <div class="table-container">
+    <table id="material-table">
+      <thead>
+        <tr>
+          <th>Material Code</th>
+          <th>Material Name</th>
+          <th>Material Price</th>
+          <th>Unit</th>
+          <th>Price Per Unit</th>
+          <th>Per</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="material-body">
+        <!-- Populated from Firebase -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
-      authDomain: "signagematerialdatabaseapp.firebaseapp.com",
-      databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
-      projectId: "signagematerialdatabaseapp",
-      storageBucket: "signagematerialdatabaseapp.appspot.com",
-      messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
-      measurementId: "G-R4EHYT0MW6"
-    };
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+    authDomain: "signagematerialdatabaseapp.firebaseapp.com",
+    databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
+    projectId: "signagematerialdatabaseapp",
+    storageBucket: "signagematerialdatabaseapp.appspot.com",
+    messagingSenderId: "276886100857",
+    appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
+    measurementId: "G-R4EHYT0MW6"
+  };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const auth = firebase.auth();
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
 
-    const adminEmail = "youradmin@email.com";
+  let currentUser = null;
 
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        location.href = "login.html";
-      } else {
-        document.getElementById('authInfo').innerText = `Logged in as: ${user.email}`;
-        loadMaterials(user.email === adminEmail);
+  auth.onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = 'login.html';
+    } else {
+      currentUser = user;
+      document.getElementById("user-email").innerText = "Logged in as: " + user.email;
+      loadMaterials();
+    }
+  });
+
+  function logout() {
+    auth.signOut().then(() => window.location.href = "login.html");
+  }
+
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.setAttribute("data-theme", html.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  }
+
+  function loadMaterials() {
+    db.ref("materials").once("value", (snapshot) => {
+      const data = snapshot.val();
+      const tbody = document.getElementById("material-body");
+      tbody.innerHTML = "";
+      if (!data) return;
+
+      for (let category in data) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="7"><strong>${category}</strong></td>`;
+        tbody.appendChild(row);
+
+        for (let key in data[category]) {
+          const mat = data[category][key];
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${mat.code}</td>
+            <td contenteditable="${isAdmin()}">${mat.name}</td>
+            <td contenteditable="${isAdmin()}">${mat.price}</td>
+            <td contenteditable="${isAdmin()}">${mat.unit}</td>
+            <td contenteditable="${isAdmin()}">${mat.pricePerUnit}</td>
+            <td contenteditable="${isAdmin()}">${mat.per}</td>
+            <td>
+              ${isAdmin() ? `<button onclick="deleteMaterial('${category}', '${key}')">Delete</button>` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
       }
     });
+  }
 
-    function logout() {
-      firebase.auth().signOut().then(() => {
-        location.href = "login.html";
+  function isAdmin() {
+    return currentUser && currentUser.email === "admin@example.com";
+  }
+
+  function addCategory() {
+    if (!isAdmin()) return;
+    const name = prompt("Category name:");
+    if (!name) return;
+    db.ref(`materials/${name}`).set({});
+    loadMaterials();
+  }
+
+  function addMaterial() {
+    if (!isAdmin()) return;
+    const category = prompt("Enter category to add material:");
+    if (!category) return;
+
+    const code = prompt("Material code:");
+    const name = prompt("Material name:");
+    const price = prompt("Material price:");
+    const unit = prompt("Unit:");
+    const ppu = prompt("Price per unit:");
+    const per = prompt("Per unit:");
+
+    if (code && name && price) {
+      db.ref(`materials/${category}/${code}`).set({
+        code,
+        name,
+        price,
+        unit,
+        pricePerUnit: ppu,
+        per
       });
+      loadMaterials();
     }
+  }
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('light-mode');
-    }
-
-    function loadMaterials(isAdmin) {
-      db.ref("materials").once("value", snapshot => {
-        const data = snapshot.val();
-        const container = document.getElementById("materialContainer");
-        container.innerHTML = '';
-
-        if (!data) {
-          container.innerHTML = "<p>No data available.</p>";
-          return;
-        }
-
-        Object.keys(data).forEach(category => {
-          const table = document.createElement("table");
-          const thead = table.createTHead();
-          const headerRow = thead.insertRow();
-          ["Code", "Name", "Price", "Unit", "Price/Unit", "Unit 2", ...(isAdmin ? ["Actions"] : [])]
-            .forEach(text => {
-              const th = document.createElement("th");
-              th.textContent = text;
-              headerRow.appendChild(th);
-            });
-
-          const tbody = table.createTBody();
-          Object.entries(data[category]).forEach(([code, mat]) => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-              <td>${code}</td>
-              <td>${mat.MaterialName}</td>
-              <td>${mat.MaterialPrice}</td>
-              <td>${mat.Unit}</td>
-              <td>${mat.PricePerUnit}</td>
-              <td>${mat.Unit2}</td>
-              ${isAdmin ? `<td><button class="edit-btn action-btn">Edit</button></td>` : ""}
-            `;
-          });
-
-          const heading = document.createElement("div");
-          heading.className = "category-heading";
-          heading.textContent = category;
-          container.appendChild(heading);
-          container.appendChild(table);
-        });
-      });
-    }
-
-    function filterMaterials() {
-      const input = document.getElementById("filterInput").value.toLowerCase();
-      const tables = document.querySelectorAll("table");
-
-      tables.forEach(table => {
-        const rows = table.querySelectorAll("tbody tr");
-        rows.forEach(row => {
-          const match = row.textContent.toLowerCase().includes(input);
-          row.style.display = match ? "" : "none";
-        });
-      });
-    }
-  </script>
+  function deleteMaterial(category, code) {
+    if (!isAdmin()) return;
+    db.ref(`materials/${category}/${code}`).remove();
+    loadMaterials();
+  }
+</script>
 </body>
 </html>

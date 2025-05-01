@@ -91,8 +91,15 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { ref } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { push } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
@@ -109,10 +116,10 @@
     const auth = getAuth(app);
 
     const categories = ["Metal", "Plastic", "Paint", "Light", "General Materials", "Vinyl"];
-    const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
+    const headers = ["Material Code", "Material Name", "Material Price", "Unit", "Price per Unit", "Unit2"];
 
     let isAdmin = false;
-    const adminEmail = "YOUR_ADMIN_EMAIL@example.com"; // Replace with real admin
+    const adminEmail = "admin@sc.com"; // Replace with real admin
 
     onAuthStateChanged(auth, (user) => {
       if (!user) return location.href = "login.html";

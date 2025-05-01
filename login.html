@@ -1,135 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Signage Calculator - Login</title>
   <style>
-    :root {
-      --bg-dark: #1e1e2f;
-      --bg-light: #f5f5f5;
-      --text-dark: #ffffff;
-      --text-light: #000000;
-      --primary: #f47521;
-    }
-
-    body.dark {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
-    body.light {
-      background-color: var(--bg-light);
-      color: var(--text-light);
-    }
-
-    * {
-      box-sizing: border-box;
+    body {
       margin: 0;
-      padding: 0;
       font-family: Arial, sans-serif;
-    }
-
-    .container {
+      background-color: #121212;
+      color: white;
       display: flex;
       height: 100vh;
-      width: 100vw;
     }
-
     .left {
       flex: 1;
-      background-color: #333;
-      background-image: url('/assets/login-bg.jpg');
-      background-size: cover;
-      background-position: center;
-    }
-
-    .right {
-      flex: 1;
+      background: #1e1e1e;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2rem;
     }
-
-    h1 {
-      margin-bottom: 1.5rem;
-      font-size: 2rem;
-      color: var(--primary);
+    .right {
+      flex: 1;
+      background: #2a2a2a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
     }
-
+    .container {
+      max-width: 350px;
+      width: 100%;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
     input {
       width: 100%;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
     }
-
     button {
-      padding: 0.75rem 1.5rem;
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
       width: 100%;
-    }
-
-    .error {
-      color: red;
-      margin-top: 0.5rem;
-    }
-
-    .toggle {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-    }
-
-    .toggle button {
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
+      padding: 10px;
+      background: #00aaff;
       border: none;
-      background-color: #666;
+      border-radius: 5px;
       color: white;
+      font-weight: bold;
       cursor: pointer;
     }
-
-    @media (max-width: 768px) {
-      .left {
-        display: none;
-      }
-      .right {
-        flex: 1;
-        width: 100%;
-      }
+    #error {
+      color: red;
+      margin-top: 10px;
+    }
+    .toggle-mode {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="dark">
-  <div class="toggle">
-    <button onclick="toggleTheme()">Toggle Mode</button>
+<body>
+  <div class="left">
+    <img src="/assets/login-placeholder.png" alt="Login Visual" style="max-width: 100%; max-height: 100%;" />
   </div>
-
-  <div class="container">
-    <div class="left"></div>
-    <div class="right">
-      <h1>Signage Calculator</h1>
+  <div class="right">
+    <div class="container">
+      <h2>Signage Calculator Login</h2>
       <input type="email" id="email" placeholder="Email" />
       <input type="password" id="password" placeholder="Password" />
-      <button onclick="login()">Log In</button>
-      <p class="error" id="error-message"></p>
+      <button onclick="login()">Login</button>
+      <div id="error"></div>
     </div>
   </div>
+  <div class="toggle-mode" onclick="toggleTheme()">🌙</div>
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
@@ -138,49 +89,46 @@
       projectId: "signagematerialdatabaseapp",
       storageBucket: "signagematerialdatabaseapp.appspot.com",
       messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
-      measurementId: "G-R4EHYT0MW6"
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
     };
     firebase.initializeApp(firebaseConfig);
-  </script>
-
-  <!-- Auth Logic -->
-  <script>
     const auth = firebase.auth();
 
     function login() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const errorEl = document.getElementById("error-message");
-
-      errorEl.textContent = "";
-
-      if (!email || !password) {
-        errorEl.textContent = "Please fill in both fields.";
-        return;
-      }
-
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
-          localStorage.setItem("userEmail", email);
+          sessionStorage.setItem('user', email);
           window.location.href = "index.html";
         })
-        .catch((error) => {
+        .catch(error => {
+          const errorMsg = document.getElementById("error");
           if (error.code === "auth/user-not-found") {
-            errorEl.textContent = "No user found.";
+            errorMsg.textContent = "No user found with this email.";
           } else if (error.code === "auth/wrong-password") {
-            errorEl.textContent = "Incorrect password.";
-          } else if (error.code === "auth/invalid-email") {
-            errorEl.textContent = "Invalid email format.";
+            errorMsg.textContent = "Incorrect password.";
           } else {
-            errorEl.textContent = "Login failed. Please try again.";
+            errorMsg.textContent = error.message;
           }
         });
     }
 
     function toggleTheme() {
-      document.body.classList.toggle("dark");
-      document.body.classList.toggle("light");
+      const html = document.documentElement;
+      if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        document.body.style.background = '#f4f4f4';
+        document.body.style.color = '#222';
+        document.querySelector('.right').style.background = '#fff';
+        document.querySelector('.left').style.background = '#ddd';
+      } else {
+        html.setAttribute('data-theme', 'dark');
+        document.body.style.background = '#121212';
+        document.body.style.color = 'white';
+        document.querySelector('.right').style.background = '#2a2a2a';
+        document.querySelector('.left').style.background = '#1e1e1e';
+      }
     }
   </script>
 </body>

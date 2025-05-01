@@ -17,17 +17,6 @@
     }
     .nav-links a:hover { text-decoration: underline; }
     .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
-    .tabs {
-      display: flex; gap: 10px; padding: 10px 20px;
-      flex-wrap: wrap; align-items: center;
-    }
-    .tab, .add-cat-btn {
-      padding: 8px 14px;
-      background: #444; color: white;
-      border-radius: 5px; cursor: pointer;
-    }
-    .tab.active { background: #ff9800; }
-    .add-cat-btn { background: #4caf50; }
     .table-wrapper {
       background: white;
       max-height: 65vh;
@@ -86,12 +75,11 @@
     </div>
   </header>
 
-  <div class="tabs" id="tabs"></div>
-  <div id="tables"></div>
+  <div class="table-wrapper" id="tableWrapper"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -108,18 +96,17 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    let isAdmin = false;
-    const adminEmail = "admin@sc.com"; // ← REPLACE with your admin email
-
     const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
-    const tabs = document.getElementById("tabs");
-    const tables = document.getElementById("tables");
+    const tableWrapper = document.getElementById("tableWrapper");
+
+    let isAdmin = false;
+    const adminEmail = "admin@example.com"; // ← REPLACE with your admin email
 
     onAuthStateChanged(auth, (user) => {
       if (!user) return location.href = "login.html";
       isAdmin = user.email === adminEmail;
       document.getElementById("userEmail").textContent = `Logged in as: ${user.email}`;
-      fetchCategories();
+      fetchMaterials();
     });
 
     function logout() {
@@ -138,45 +125,36 @@
     const savedTheme = localStorage.getItem("theme") || "dark";
     document.body.classList.add(savedTheme);
 
-    function fetchCategories() {
-      onValue(ref(db), (snapshot) => {
+    function fetchMaterials() {
+      onValue(ref(db, 'materials'), (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        tabs.innerHTML = "";
-        tables.innerHTML = "";
+        tableWrapper.innerHTML = "";
 
-        const categories = Object.keys(data);
-        categories.forEach((cat, index) => {
-          const tab = document.createElement("div");
-          tab.className = "tab" + (index === 0 ? " active" : "");
-          tab.textContent = cat;
-          tab.onclick = () => showCategory(cat);
-          tabs.appendChild(tab);
-
-          createCategoryTable(cat, data[cat], index === 0);
+        const allMaterials = [];
+        Object.entries(data).forEach(([category, materials]) => {
+          Object.entries(materials).forEach(([key, material]) => {
+            allMaterials.push(material);
+          });
         });
+
+        createTable(allMaterials);
       });
     }
 
-    function createCategoryTable(category, materials, visible) {
-      const wrapper = document.createElement("div");
-      wrapper.id = "table-" + category;
-      wrapper.className = "table-wrapper" + (visible ? "" : " hidden");
-      tables.appendChild(wrapper);
-
+    function createTable(materials) {
       const filterRow = document.createElement("div");
       filterRow.className = "filter-row";
-      headers.forEach((_, i) => {
+      headers.forEach(() => {
         const div = document.createElement("div");
         const input = document.createElement("input");
         input.placeholder = "Filter...";
-        input.oninput = () => filterTable(wrapper, i, input.value);
+        input.oninput = () => filterTable(input.value);
         div.appendChild(input);
         filterRow.appendChild(div);
       });
-      filterRow.appendChild(document.createElement("div")); // For action col
-      wrapper.appendChild(filterRow);
+      tableWrapper.appendChild(filterRow);
 
       const headerRow = document.createElement("div");
       headerRow.className = "header-row";
@@ -188,13 +166,13 @@
       const actionHead = document.createElement("div");
       actionHead.textContent = "Action";
       headerRow.appendChild(actionHead);
-      wrapper.appendChild(headerRow);
+      tableWrapper.appendChild(headerRow);
 
       const rowsContainer = document.createElement("div");
-      wrapper.appendChild(rowsContainer);
+      tableWrapper.appendChild(rowsContainer);
 
-      Object.entries(materials).forEach(([key, data]) => {
-        rowsContainer.appendChild(createRow(category, key, data));
+      materials.forEach((material) => {
+        rowsContainer.appendChild(createRow(material));
       });
 
       if (isAdmin) {
@@ -214,7 +192,7 @@
         btn.onclick = () => {
           const newData = {};
           headers.forEach((h, i) => newData[h] = inputs[i].value);
-          push(ref(db, `${category}`), newData);
+          push(ref(db, 'materials'), newData);
         };
         action.appendChild(btn);
         newRow.appendChild(action);
@@ -222,14 +200,13 @@
       }
     }
 
-    function createRow(category, key, data) {
+    function createRow(material) {
       const row = document.createElement("div");
       row.className = "row";
-      const cells = headers.map(h => {
+      headers.forEach((header) => {
         const div = document.createElement("div");
-        div.textContent = data[h] || "";
+        div.textContent = material[header] || "";
         row.appendChild(div);
-        return div;
       });
 
       const actionDiv = document.createElement("div");
@@ -238,58 +215,33 @@
       if (isAdmin) {
         const editBtn = document.createElement("button");
         editBtn.textContent = "Edit";
-        let editing = false;
-
         editBtn.onclick = () => {
-          editing = !editing;
-          if (editing) {
-            row.classList.add("editing");
-            cells.forEach(c => {
-              const input = document.createElement("input");
-              input.value = c.textContent;
-              c.innerHTML = "";
-              c.appendChild(input);
-            });
-            editBtn.textContent = "Save";
-          } else {
-            const updated = {};
-            headers.forEach((h, i) => {
-              updated[h] = cells[i].querySelector("input").value;
-              cells[i].textContent = updated[h];
-            });
-            update(ref(db, `${category}/${key}`), updated);
-            row.classList.remove("editing");
-            editBtn.textContent = "Edit";
-          }
+          alert("Edit functionality not implemented.");
         };
 
         const delBtn = document.createElement("button");
         delBtn.textContent = "Delete";
         delBtn.onclick = () => {
-          if (confirm("Delete this item?")) remove(ref(db, `${category}/${key}`));
+          alert("Delete functionality not implemented.");
         };
 
         actionDiv.appendChild(editBtn);
         actionDiv.appendChild(delBtn);
       }
+
       row.appendChild(actionDiv);
       return row;
     }
 
-    function filterTable(wrapper, index, value) {
-      const rows = wrapper.querySelectorAll(".row");
-      rows.forEach(row => {
-        const cell = row.children[index];
-        if (!cell || cell.querySelector("input")) return;
-        row.style.display = cell.textContent.toLowerCase().includes(value.toLowerCase()) ? "" : "none";
+    function filterTable(value) {
+      const rows = tableWrapper.querySelectorAll(".row");
+      rows.forEach((row) => {
+        const cells = row.querySelectorAll("div");
+        const match = Array.from(cells).some((cell) =>
+          cell.textContent.toLowerCase().includes(value.toLowerCase())
+        );
+        row.style.display = match ? "" : "none";
       });
-    }
-
-    function showCategory(name) {
-      document.querySelectorAll(".table-wrapper").forEach(div => div.classList.add("hidden"));
-      document.getElementById("table-" + name)?.classList.remove("hidden");
-      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-      Array.from(tabs.children).find(t => t.textContent === name)?.classList.add("active");
     }
   </script>
 </body>

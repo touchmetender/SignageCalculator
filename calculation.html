@@ -2,102 +2,203 @@
 <html>
 <head>
   <title>Signage Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: Arial; padding: 20px; }
-    #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    label, input, select { display: block; margin: 10px 0; width: 100%; max-width: 400px; }
-    #results { margin-top: 20px; font-weight: bold; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f8f9fa;
+    }
+
+    header {
+      background: #007bff;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .user-info {
+      font-size: 14px;
+    }
+
+    .logout-btn {
+      background: white;
+      color: #007bff;
+      padding: 4px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    .nav-links a {
+      margin-right: 10px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+
+    label, input, select, button {
+      display: block;
+      margin: 10px 0;
+    }
+
+    input[type="text"], input[type="number"], select {
+      padding: 8px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      max-width: 400px;
+    }
   </style>
 </head>
 <body>
-  <div id="header">
-    <h2>Signage Cost Calculator</h2>
-    <div>
-      <span id="userEmail"></span>
-      <button onclick="logout()">Logout</button>
-      <button onclick="window.location.href='index.html'">Material DB</button>
+  <header>
+    <h1>Signage Calculator</h1>
+    <div class="user-info">
+      Logged in as: <span id="user-email"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-  </div>
+  </header>
 
-  <label>Reference No: <input id="refNo" /></label>
-  <label>Material:
-    <select id="materialSelect"></select>
-  </label>
-  <label>Length (m): <input type="number" id="length" /></label>
-  <label>Width (m): <input type="number" id="width" /></label>
-  <label>Quantity: <input type="number" id="qty" value="1" /></label>
+  <main>
+    <div class="nav-links">
+      <a href="index.html">Material Database</a> |
+      <a href="quotation.html">Quotation (Coming Soon)</a>
+    </div>
 
-  <button onclick="calculate()">Calculate</button>
-  <div id="results"></div>
+    <label for="ref">Reference Number</label>
+    <input type="text" id="ref" placeholder="e.g. REF-001" />
 
-  <!-- Firebase SDK and Configuration Inline -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <label for="material">Select Material</label>
+    <select id="material"></select>
 
+    <label for="length">Length (m)</label>
+    <input type="number" id="length" placeholder="e.g. 2.5" />
+
+    <label for="width">Width (m)</label>
+    <input type="number" id="width" placeholder="e.g. 1.2" />
+
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity" placeholder="e.g. 10" />
+
+    <button onclick="calculate()">Calculate Total</button>
+
+    <div class="result" id="result" style="display:none;"></div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
       authDomain: "signagematerialdatabaseapp.firebaseapp.com",
       databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
       projectId: "signagematerialdatabaseapp",
-      storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
+      storageBucket: "signagematerialdatabaseapp.appspot.com",
       messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
-      measurementId: "G-R4EHYT0MW6"
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const database = firebase.database();
+    const db = firebase.database();
 
-    // Check if user is logged in
-    const user = sessionStorage.getItem("user");
-    if (!user) location.href = "login.html";
-    document.getElementById("userEmail").textContent = `Logged in as: ${user}`;
+    let userEmail = localStorage.getItem("user");
+    if (!userEmail) window.location.href = "login.html";
+    document.getElementById("user-email").innerText = userEmail;
 
-    // Handle logout
     function logout() {
-      firebase.auth().signOut().then(() => {
-        sessionStorage.clear();
+      auth.signOut().then(() => {
+        localStorage.clear();
         window.location.href = "login.html";
       });
     }
 
-    // Load materials from Firebase
-    const materialSelect = document.getElementById("materialSelect");
-    const db = firebase.database().ref("materials");
-    const materialMap = {};
+    let materialData = {};
 
-    db.on("value", snapshot => {
-      snapshot.forEach(row => {
-        const mat = row.val();
-        materialMap[mat.code] = mat;
-        const opt = document.createElement("option");
-        opt.value = mat.code;
-        opt.text = `${mat.code} - ${mat.name}`;
-        materialSelect.appendChild(opt);
+    function loadMaterials() {
+      db.ref("materials").once("value", snapshot => {
+        const select = document.getElementById("material");
+        snapshot.forEach(catSnap => {
+          catSnap.forEach(matSnap => {
+            const mat = matSnap.val();
+            const fullKey = `${catSnap.key}/${matSnap.key}`;
+            materialData[fullKey] = mat;
+            const option = document.createElement("option");
+            option.value = fullKey;
+            option.textContent = `${mat.code} - ${mat.name}`;
+            select.appendChild(option);
+          });
+        });
       });
-    });
-
-    // Perform cost calculation
-    function calculate() {
-      const code = materialSelect.value;
-      const mat = materialMap[code];
-      const area = parseFloat(document.getElementById("length").value || 0) * parseFloat(document.getElementById("width").value || 0);
-      const qty = parseFloat(document.getElementById("qty").value || 1);
-      const cost = mat.unit2 === "m^2" ? mat.pricePerUnit * area * qty : mat.price * qty;
-
-      document.getElementById("results").innerHTML = `
-        Material: ${mat.name}<br>
-        Area: ${area.toFixed(2)} ${mat.unit2}<br>
-        Quantity: ${qty}<br>
-        Total Cost: <strong>QAR ${cost.toFixed(2)}</strong>
-      `;
     }
-  </script>
 
+    function calculate() {
+      const ref = document.getElementById("ref").value.trim();
+      const selected = document.getElementById("material").value;
+      const length = parseFloat(document.getElementById("length").value);
+      const width = parseFloat(document.getElementById("width").value);
+      const qty = parseInt(document.getElementById("quantity").value);
+
+      if (!ref || !selected || isNaN(length) || isNaN(width) || isNaN(qty)) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
+
+      const mat = materialData[selected];
+      const area = length * width;
+      const cost = parseFloat(mat.pricePerUnit) * area * qty;
+
+      const resultBox = document.getElementById("result");
+      resultBox.innerHTML = `
+        <strong>Reference:</strong> ${ref}<br>
+        <strong>Material:</strong> ${mat.name}<br>
+        <strong>Area:</strong> ${area.toFixed(2)} m²<br>
+        <strong>Quantity:</strong> ${qty}<br>
+        <strong>Total Cost:</strong> AED ${cost.toFixed(2)}
+      `;
+      resultBox.style.display = "block";
+
+      // Save to DB under reference number
+      db.ref("calculations/" + ref).set({
+        reference: ref,
+        material: mat.name,
+        code: mat.code,
+        area: area.toFixed(2),
+        quantity: qty,
+        totalCost: cost.toFixed(2),
+        user: userEmail,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    loadMaterials();
+  </script>
 </body>
 </html>

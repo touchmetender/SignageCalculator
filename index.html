@@ -1,309 +1,338 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator – Material Database</title>
+  <title>Signage Calculator - Database</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap">
   <style>
-    body.dark { background: #121212; color: white; }
-    body.light { background: #f4f4f4; color: black; }
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem 2rem; background: #202020; color: white;
-      position: sticky; top: 0; z-index: 100;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
     }
-    .nav-links a {
-      margin-left: 1rem; text-decoration: none; color: white;
+    :root[data-theme='dark'] {
+      --bg: #121212;
+      --fg: #fff;
+      --primary: #3498db;
+      --accent: #2ecc71;
+      --card: #1f1f1f;
     }
-    .nav-links a:hover { text-decoration: underline; }
-    .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
+    :root[data-theme='light'] {
+      --bg: #f4f4f4;
+      --fg: #000;
+      --primary: #2980b9;
+      --accent: #27ae60;
+      --card: #fff;
+    }
+    nav {
+      background: var(--card);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #ccc;
+    }
+    nav .left { font-size: 1.5rem; font-weight: bold; }
+    nav .right {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    nav a {
+      color: var(--fg);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    nav a:hover {
+      color: var(--accent);
+    }
+    .theme-toggle, .logout-btn {
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--fg);
+      font-size: 1rem;
+    }
+
     .tabs {
-      display: flex; gap: 10px; padding: 10px 20px;
-      flex-wrap: wrap; align-items: center;
+      display: flex; flex-wrap: wrap;
+      gap: 10px;
+      padding: 1rem 2rem;
     }
-    .tab, .add-cat-btn {
-      padding: 8px 14px;
-      background: #444; color: white;
-      border-radius: 5px; cursor: pointer;
+    .tab {
+      background: var(--card);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    .tab.active { background: #ff9800; }
-    .add-cat-btn { background: #4caf50; }
-    .table-wrapper {
-      background: white;
-      max-height: 65vh;
-      overflow-y: auto;
-      margin: 20px;
-      border-radius: 6px;
-    }
-    .header-row, .filter-row, .row {
-      display: flex; flex-wrap: nowrap;
-      font-size: 14px;
-    }
-    .header-row, .filter-row {
-      position: sticky;
-      top: 0;
-      background: #333;
+    .tab.active {
+      background: var(--primary);
       color: white;
-      z-index: 10;
+    }
+    .add-cat {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .table-container {
+      margin: 0 2rem 2rem;
+      background: var(--card);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .table-scroll {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .header-row, .filter-row, .data-row {
+      display: flex;
+    }
+    .header-row div, .filter-row div, .data-row div {
+      padding: 8px;
+      border-bottom: 1px solid #ccc;
+      min-width: 140px;
+      flex-shrink: 0;
     }
     .filter-row input {
       width: 100%;
-      padding: 3px;
+      padding: 4px;
     }
-    .row > div, .header-row > div, .filter-row > div {
-      flex: 1;
-      border: 1px solid #ccc;
-      padding: 6px;
-      box-sizing: border-box;
-      min-width: 100px;
-    }
-    .row.editing { background: #fff8b3; }
-    .action-cell button {
-      margin: 0 2px;
+    .action-btn {
       background: none;
       border: none;
-      color: #007bff;
+      color: var(--primary);
       cursor: pointer;
     }
-    .action-cell button:hover { text-decoration: underline; }
+    .action-btn:hover {
+      text-decoration: underline;
+    }
+    .highlight {
+      background: #fffa9e;
+    }
   </style>
 </head>
-<body class="dark">
-  <header>
-    <div>
-      <strong>Signage Calculator</strong>
-      <span class="nav-links">
-        <a href="index.html">Database</a>
-        <a href="calculation.html">Calculation</a>
-        <a href="quotation.html">Quotation</a>
-        <a href="#">More ▼</a>
-      </span>
+<body>
+  <nav>
+    <div class="left">Signage Calculator</div>
+    <div class="right">
+      <a href="index.html">Database</a>
+      <a href="calculation.html">Calculation</a>
+      <a href="quotation.html">Quotation ▼</a>
+      <span id="user-email"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
     </div>
-    <div>
-      <span id="userEmail" class="auth-status"></span>
-      <button onclick="logout()">Logout</button>
-      <button class="mode-toggle" onclick="toggleMode()">🌗</button>
-    </div>
-  </header>
+  </nav>
 
   <div class="tabs" id="tabs"></div>
   <div id="tables"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      getDatabase, ref, onValue, push, set, update, remove
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import {
+      getAuth, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
       authDomain: "signagematerialdatabaseapp.firebaseapp.com",
       databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
       projectId: "signagematerialdatabaseapp",
-      storageBucket: "signagematerialdatabaseapp.appspot.com",
+      storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
       messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
+      measurementId: "G-R4EHYT0MW6"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+    const userEmail = document.getElementById("user-email");
 
-    let isAdmin = false;
-    const adminEmail = "admin@sc.com"; // Replace with your admin email
-
-    const categories = ["Metal", "Plastic", "Paint", "Light", "General Materials", "Vinyl"];
     const headers = ["Material Code", "Material Name", "Material Price", "Unit", "Price per Unit", "Unit2"];
-
-    const tabs = document.getElementById("tabs");
-    const tables = document.getElementById("tables");
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) return location.href = "login.html";
-      isAdmin = user.email === adminEmail;
-      document.getElementById("userEmail").textContent = `Logged in as: ${user.email}`;
-      init();
-    });
+    let userRole = "user";
 
     function logout() {
       signOut(auth).then(() => location.href = "login.html");
     }
 
-    function toggleMode() {
-      document.body.classList.toggle("dark");
-      document.body.classList.toggle("light");
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "light" : "dark";
     }
 
-    function init() {
-      tabs.innerHTML = "";
-      tables.innerHTML = "";
-
-      categories.forEach((cat, index) => {
-        const tab = document.createElement("div");
-        tab.className = "tab" + (index === 0 ? " active" : "");
-        tab.textContent = cat;
-        tab.onclick = () => showCategory(cat);
-        tabs.appendChild(tab);
-
-        createCategoryTable(cat, index === 0);
-      });
-
-      if (isAdmin) {
-        const addCatBtn = document.createElement("button");
-        addCatBtn.className = "add-cat-btn";
-        addCatBtn.textContent = "+ Add Category";
-        addCatBtn.onclick = () => {
-          const newCat = prompt("Enter new category:");
-          if (newCat && !categories.includes(newCat)) {
-            categories.push(newCat);
-            set(ref(db, `materials/${newCat}`), {});
-            init();
-          }
-        };
-        tabs.appendChild(addCatBtn);
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        location.href = "login.html";
+      } else {
+        userEmail.textContent = "Logged in as: " + user.email;
+        if (user.email === "admin@email.com") userRole = "admin";
+        loadTabs();
       }
-    }
+    });
 
-    function createCategoryTable(category, visible) {
-      const wrapper = document.createElement("div");
-      wrapper.id = "table-" + category;
-      wrapper.className = "table-wrapper" + (visible ? "" : " hidden");
-      tables.appendChild(wrapper);
+    function loadTabs() {
+      const tabWrap = document.getElementById("tabs");
+      const tablesWrap = document.getElementById("tables");
 
-      const filterRow = document.createElement("div");
-      filterRow.className = "filter-row";
-      headers.forEach((_, i) => {
-        const div = document.createElement("div");
-        const input = document.createElement("input");
-        input.placeholder = "Filter...";
-        input.oninput = () => filterTable(category, i, input.value);
-        div.appendChild(input);
-        filterRow.appendChild(div);
-      });
-      filterRow.appendChild(document.createElement("div")); // For action col
-      wrapper.appendChild(filterRow);
-
-      const headerRow = document.createElement("div");
-      headerRow.className = "header-row";
-      headers.forEach((h) => {
-        const div = document.createElement("div");
-        div.textContent = h;
-        headerRow.appendChild(div);
-      });
-      const actionHead = document.createElement("div");
-      actionHead.textContent = "Action";
-      headerRow.appendChild(actionHead);
-      wrapper.appendChild(headerRow);
-
-      const dataRef = ref(db, `materials/${category}`);
-      const rowsContainer = document.createElement("div");
-      wrapper.appendChild(rowsContainer);
-
-      onValue(dataRef, (snapshot) => {
-        rowsContainer.innerHTML = "";
+      onValue(ref(db), snapshot => {
         const data = snapshot.val();
-        for (let key in data) {
-          rowsContainer.appendChild(createRow(category, key, data[key]));
-        }
+        tabWrap.innerHTML = "";
+        tablesWrap.innerHTML = "";
 
-        if (isAdmin) {
-          const newRow = document.createElement("div");
-          newRow.className = "row";
-          const inputs = headers.map(() => {
-            const div = document.createElement("div");
-            const input = document.createElement("input");
-            input.style.width = "100%";
-            div.appendChild(input);
-            newRow.appendChild(div);
-            return input;
+        if (!data) return;
+
+        const categories = Object.keys(data);
+        categories.forEach((cat, idx) => {
+          const tab = document.createElement("div");
+          tab.className = "tab" + (idx === 0 ? " active" : "");
+          tab.textContent = cat;
+          tab.onclick = () => showCategory(cat);
+          tabWrap.appendChild(tab);
+
+          const tableWrap = document.createElement("div");
+          tableWrap.id = `table-${cat}`;
+          tableWrap.className = "table-container" + (idx === 0 ? "" : " hidden");
+
+          const header = document.createElement("div");
+          header.className = "header-row";
+          headers.forEach(h => {
+            const col = document.createElement("div");
+            col.textContent = h;
+            header.appendChild(col);
           });
-          const action = document.createElement("div");
-          const btn = document.createElement("button");
-          btn.textContent = "Add";
-          btn.onclick = () => {
-            const newData = {};
-            headers.forEach((h, i) => newData[h] = inputs[i].value);
-            push(ref(db, `materials/${category}`), newData);
+          if (userRole === "admin") header.appendChild(document.createElement("div")).textContent = "Action";
+
+          const filterRow = document.createElement("div");
+          filterRow.className = "filter-row";
+          headers.forEach((_, i) => {
+            const cell = document.createElement("div");
+            const input = document.createElement("input");
+            input.placeholder = "Filter...";
+            input.oninput = () => filterRows(cat, i, input.value);
+            cell.appendChild(input);
+            filterRow.appendChild(cell);
+          });
+          if (userRole === "admin") filterRow.appendChild(document.createElement("div"));
+
+          const scrollWrap = document.createElement("div");
+          scrollWrap.className = "table-scroll";
+
+          const rows = document.createElement("div");
+          rows.className = "data-rows";
+          const materials = data[cat];
+          for (let key in materials) {
+            const rowData = materials[key];
+            rows.appendChild(createRow(cat, key, rowData));
+          }
+
+          scrollWrap.appendChild(rows);
+          tableWrap.appendChild(filterRow);
+          tableWrap.appendChild(header);
+          tableWrap.appendChild(scrollWrap);
+
+          if (userRole === "admin") {
+            const btn = document.createElement("button");
+            btn.textContent = "+ Add Material";
+            btn.className = "add-cat";
+            btn.onclick = () => {
+              const newRef = push(ref(db, cat));
+              const blank = {};
+              headers.forEach(h => blank[h] = "");
+              set(newRef, blank);
+            };
+            tableWrap.appendChild(btn);
+          }
+
+          tablesWrap.appendChild(tableWrap);
+        });
+
+        if (userRole === "admin") {
+          const addCategoryBtn = document.createElement("button");
+          addCategoryBtn.textContent = "+ Add Category";
+          addCategoryBtn.className = "add-cat";
+          addCategoryBtn.onclick = () => {
+            const name = prompt("New category name?");
+            if (name) set(ref(db, name), {});
           };
-          action.appendChild(btn);
-          newRow.appendChild(action);
-          rowsContainer.appendChild(newRow);
+          tabWrap.appendChild(addCategoryBtn);
         }
       });
     }
 
-    function createRow(category, key, data) {
+    function showCategory(cat) {
+      document.querySelectorAll(".table-container").forEach(e => e.classList.add("hidden"));
+      document.querySelector(`#table-${cat}`).classList.remove("hidden");
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      [...document.querySelectorAll(".tab")].find(t => t.textContent === cat)?.classList.add("active");
+    }
+
+    function createRow(cat, key, rowData) {
       const row = document.createElement("div");
-      row.className = "row";
-      const cells = headers.map(h => {
+      row.className = "data-row";
+      const cells = [];
+
+      headers.forEach(h => {
         const div = document.createElement("div");
-        div.textContent = data[h] || "";
+        div.textContent = rowData[h] || "";
+        div.contentEditable = false;
         row.appendChild(div);
-        return div;
+        cells.push(div);
       });
 
-      const actionDiv = document.createElement("div");
-      actionDiv.className = "action-cell";
-
-      if (isAdmin) {
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        let editing = false;
-
-        editBtn.onclick = () => {
-          editing = !editing;
-          if (editing) {
-            row.classList.add("editing");
-            cells.forEach(c => {
-              const input = document.createElement("input");
-              input.value = c.textContent;
-              c.innerHTML = "";
-              c.appendChild(input);
-            });
-            editBtn.textContent = "Save";
-          } else {
+      if (userRole === "admin") {
+        const action = document.createElement("div");
+        const edit = document.createElement("button");
+        edit.textContent = "Edit";
+        edit.className = "action-btn";
+        edit.onclick = () => {
+          const editing = edit.textContent === "Edit";
+          cells.forEach(c => {
+            c.contentEditable = editing;
+            c.classList.toggle("highlight", editing);
+          });
+          edit.textContent = editing ? "Save" : "Edit";
+          if (!editing) {
             const updated = {};
-            headers.forEach((h, i) => {
-              updated[h] = cells[i].querySelector("input").value;
-              cells[i].textContent = updated[h];
-            });
-            update(ref(db, `materials/${category}/${key}`), updated);
-            row.classList.remove("editing");
-            editBtn.textContent = "Edit";
+            headers.forEach((h, i) => updated[h] = cells[i].textContent.trim());
+            update(ref(db, `${cat}/${key}`), updated);
           }
         };
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.onclick = () => {
-          if (confirm("Delete this item?")) remove(ref(db, `materials/${category}/${key}`));
+
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.className = "action-btn";
+        del.onclick = () => {
+          if (confirm("Delete this material?")) {
+            remove(ref(db, `${cat}/${key}`));
+          }
         };
 
-        actionDiv.appendChild(editBtn);
-        actionDiv.appendChild(delBtn);
+        action.appendChild(edit);
+        action.appendChild(del);
+        row.appendChild(action);
       }
-      row.appendChild(actionDiv);
+
       return row;
     }
 
-    function filterTable(category, index, value) {
-      const wrapper = document.getElementById("table-" + category);
-      const rows = wrapper.querySelectorAll(".row");
-      rows.forEach(row => {
-        if (!row.classList.contains("filter-row") && !row.classList.contains("header-row")) {
-          const cell = row.children[index];
-          row.style.display = cell.textContent.toLowerCase().includes(value.toLowerCase()) ? "" : "none";
-        }
+    function filterRows(cat, index, value) {
+      const table = document.getElementById(`table-${cat}`);
+      const rows = table.querySelectorAll(".data-row");
+      rows.forEach(r => {
+        const cell = r.children[index];
+        r.style.display = cell.textContent.toLowerCase().includes(value.toLowerCase()) ? "" : "none";
       });
-    }
-
-    function showCategory(name) {
-      categories.forEach(cat => {
-        const table = document.getElementById("table-" + cat);
-        if (table) table.classList.add("hidden");
-      });
-      document.getElementById("table-" + name)?.classList.remove("hidden");
-      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-      Array.from(tabs.children).find(t => t.textContent === name)?.classList.add("active");
     }
   </script>
 </body>

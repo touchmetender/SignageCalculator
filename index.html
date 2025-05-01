@@ -18,32 +18,52 @@
     .nav-links a:hover { text-decoration: underline; }
     .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
     .tabs {
-      display: flex; gap: 10px; padding: 10px 20px; flex-wrap: wrap;
+      display: flex; gap: 10px; padding: 10px 20px;
+      flex-wrap: wrap; align-items: center;
     }
     .tab, .add-cat-btn {
-      padding: 8px 14px; background: #444; color: white; border-radius: 5px; cursor: pointer;
+      padding: 8px 14px;
+      background: #444; color: white;
+      border-radius: 5px; cursor: pointer;
     }
     .tab.active { background: #ff9800; }
     .add-cat-btn { background: #4caf50; }
     .table-wrapper {
-      background: white; margin: 20px; border-radius: 6px;
-      overflow: auto; max-height: 65vh;
+      background: white;
+      max-height: 65vh;
+      overflow-y: auto;
+      margin: 20px;
+      border-radius: 6px;
     }
     .header-row, .filter-row, .row {
-      display: flex; flex-wrap: nowrap; font-size: 14px;
+      display: flex;
+      font-size: 14px;
     }
     .header-row, .filter-row {
-      position: sticky; top: 0; background: #333; color: white; z-index: 10;
+      position: sticky;
+      top: 0;
+      background: #333;
+      color: white;
+      z-index: 10;
     }
     .filter-row input {
-      width: 100%; padding: 3px;
+      width: 100%;
+      padding: 3px;
     }
     .row > div, .header-row > div, .filter-row > div {
-      flex: 1; border: 1px solid #ccc; padding: 6px; box-sizing: border-box; min-width: 100px;
+      flex: 1;
+      border: 1px solid #ccc;
+      padding: 6px;
+      box-sizing: border-box;
+      min-width: 100px;
     }
     .row.editing { background: #fff8b3; }
     .action-cell button {
-      margin: 0 2px; background: none; border: none; color: #007bff; cursor: pointer;
+      margin: 0 2px;
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
     }
     .action-cell button:hover { text-decoration: underline; }
   </style>
@@ -67,11 +87,11 @@
   </header>
 
   <div class="tabs" id="tabs"></div>
-  <div id="tables"></div>
+  <div id="table-area"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, set, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -87,19 +107,19 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+
     const categories = ["Metal", "Plastic", "Paint", "Light", "General Materials", "Vinyl"];
     const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
-    let isAdmin = false;
-    const adminEmail = "admin@sc.com"; // Replace with your admin email
 
-    const tabs = document.getElementById("tabs");
-    const tables = document.getElementById("tables");
+    let isAdmin = false;
+    const adminEmail = "YOUR_ADMIN_EMAIL@example.com"; // Replace with real admin
 
     onAuthStateChanged(auth, (user) => {
       if (!user) return location.href = "login.html";
       isAdmin = user.email === adminEmail;
       document.getElementById("userEmail").textContent = `Logged in as: ${user.email}`;
-      init();
+      initTabs();
+      loadCategory(categories[0]);
     });
 
     function logout() {
@@ -111,41 +131,44 @@
       document.body.classList.toggle("light");
     }
 
-    function init() {
+    function initTabs() {
+      const tabs = document.getElementById("tabs");
       tabs.innerHTML = "";
-      tables.innerHTML = "";
-
-      categories.forEach((cat, i) => {
+      categories.forEach(cat => {
         const tab = document.createElement("div");
-        tab.className = "tab" + (i === 0 ? " active" : "");
+        tab.className = "tab";
         tab.textContent = cat;
-        tab.onclick = () => showCategory(cat);
+        tab.onclick = () => {
+          document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          loadCategory(cat);
+        };
         tabs.appendChild(tab);
-
-        createCategoryTable(cat, i === 0);
       });
     }
 
-    function createCategoryTable(category, visible) {
-      const wrapper = document.createElement("div");
-      wrapper.id = "table-" + category;
-      wrapper.className = "table-wrapper" + (visible ? "" : " hidden");
-      tables.appendChild(wrapper);
+    function loadCategory(category) {
+      const tableArea = document.getElementById("table-area");
+      tableArea.innerHTML = "";
 
+      const wrapper = document.createElement("div");
+      wrapper.className = "table-wrapper";
+
+      // Filter row
       const filterRow = document.createElement("div");
       filterRow.className = "filter-row";
-      const filters = [];
-      headers.forEach((_, i) => {
+      const filterInputs = [];
+      headers.forEach(() => {
         const div = document.createElement("div");
         const input = document.createElement("input");
-        input.placeholder = "Filter...";
         div.appendChild(input);
-        filters.push(input);
         filterRow.appendChild(div);
+        filterInputs.push(input);
       });
-      filterRow.appendChild(document.createElement("div"));
+      filterRow.appendChild(document.createElement("div")); // action column
       wrapper.appendChild(filterRow);
 
+      // Header row
       const headerRow = document.createElement("div");
       headerRow.className = "header-row";
       headers.forEach(h => {
@@ -153,119 +176,112 @@
         div.textContent = h;
         headerRow.appendChild(div);
       });
-      const act = document.createElement("div");
-      act.textContent = "Action";
-      headerRow.appendChild(act);
+      const actionHeader = document.createElement("div");
+      actionHeader.textContent = "Action";
+      headerRow.appendChild(actionHeader);
       wrapper.appendChild(headerRow);
 
       const rowsContainer = document.createElement("div");
       wrapper.appendChild(rowsContainer);
+      tableArea.appendChild(wrapper);
 
-      const catRef = ref(db, `materials/${category}`);
-      onValue(catRef, snapshot => {
-        rowsContainer.innerHTML = "";
+      const refPath = ref(db, `materials/${category}`);
+      onValue(refPath, (snapshot) => {
         const data = snapshot.val();
+        rowsContainer.innerHTML = "";
+
         if (data) {
-          for (let key in data) {
-            rowsContainer.appendChild(createRow(category, key, data[key]));
-          }
+          Object.entries(data).forEach(([key, row]) => {
+            const rowEl = document.createElement("div");
+            rowEl.className = "row";
+
+            const cells = headers.map(h => {
+              const div = document.createElement("div");
+              div.textContent = row[h] || "";
+              rowEl.appendChild(div);
+              return div;
+            });
+
+            const actionDiv = document.createElement("div");
+            actionDiv.className = "action-cell";
+
+            if (isAdmin) {
+              const editBtn = document.createElement("button");
+              editBtn.textContent = "Edit";
+              let editing = false;
+              editBtn.onclick = () => {
+                editing = !editing;
+                if (editing) {
+                  rowEl.classList.add("editing");
+                  cells.forEach(c => {
+                    const input = document.createElement("input");
+                    input.value = c.textContent;
+                    c.innerHTML = "";
+                    c.appendChild(input);
+                  });
+                  editBtn.textContent = "Save";
+                } else {
+                  const updated = {};
+                  headers.forEach((h, i) => {
+                    updated[h] = cells[i].querySelector("input").value;
+                    cells[i].textContent = updated[h];
+                  });
+                  update(ref(db, `materials/${category}/${key}`), updated);
+                  rowEl.classList.remove("editing");
+                  editBtn.textContent = "Edit";
+                }
+              };
+              const delBtn = document.createElement("button");
+              delBtn.textContent = "Delete";
+              delBtn.onclick = () => {
+                if (confirm("Delete this item?")) remove(ref(db, `materials/${category}/${key}`));
+              };
+              actionDiv.appendChild(editBtn);
+              actionDiv.appendChild(delBtn);
+            }
+
+            rowEl.appendChild(actionDiv);
+            rowsContainer.appendChild(rowEl);
+          });
+        }
+
+        // Add row input (if admin)
+        if (isAdmin) {
+          const newRow = document.createElement("div");
+          newRow.className = "row";
+          const inputs = headers.map(() => {
+            const div = document.createElement("div");
+            const input = document.createElement("input");
+            div.appendChild(input);
+            newRow.appendChild(div);
+            return input;
+          });
+          const addAction = document.createElement("div");
+          const addBtn = document.createElement("button");
+          addBtn.textContent = "Add";
+          addBtn.onclick = () => {
+            const data = {};
+            headers.forEach((h, i) => data[h] = inputs[i].value);
+            push(ref(db, `materials/${category}`), data);
+          };
+          addAction.appendChild(addBtn);
+          newRow.appendChild(addAction);
+          rowsContainer.appendChild(newRow);
         }
       });
 
-      if (isAdmin) {
-        const newRow = document.createElement("div");
-        newRow.className = "row";
-        const inputs = headers.map(() => {
-          const div = document.createElement("div");
-          const input = document.createElement("input");
-          input.style.width = "100%";
-          div.appendChild(input);
-          newRow.appendChild(div);
-          return input;
-        });
-        const action = document.createElement("div");
-        const addBtn = document.createElement("button");
-        addBtn.textContent = "Add";
-        addBtn.onclick = () => {
-          const data = {};
-          headers.forEach((h, i) => data[h] = inputs[i].value);
-          push(ref(db, `materials/${category}`), data);
-        };
-        action.appendChild(addBtn);
-        newRow.appendChild(action);
-        rowsContainer.appendChild(newRow);
-      }
-
-      filters.forEach((input, idx) => {
+      // Filter logic
+      filterInputs.forEach((input, colIndex) => {
         input.oninput = () => {
-          const value = input.value.toLowerCase();
-          Array.from(rowsContainer.querySelectorAll(".row")).forEach(row => {
-            const cell = row.children[idx];
+          const rows = wrapper.querySelectorAll(".row");
+          rows.forEach(row => {
+            const cell = row.children[colIndex];
             if (!cell) return;
-            row.style.display = cell.textContent.toLowerCase().includes(value) ? "" : "none";
+            const match = cell.textContent.toLowerCase().includes(input.value.toLowerCase());
+            row.style.display = match || row.classList.contains("editing") ? "" : "none";
           });
         };
       });
-    }
-
-    function createRow(category, key, data) {
-      const row = document.createElement("div");
-      row.className = "row";
-      const cells = headers.map(h => {
-        const div = document.createElement("div");
-        div.textContent = data[h] || "";
-        row.appendChild(div);
-        return div;
-      });
-
-      const action = document.createElement("div");
-      action.className = "action-cell";
-      if (isAdmin) {
-        const edit = document.createElement("button");
-        edit.textContent = "Edit";
-        let editing = false;
-        edit.onclick = () => {
-          editing = !editing;
-          if (editing) {
-            row.classList.add("editing");
-            cells.forEach(c => {
-              const input = document.createElement("input");
-              input.value = c.textContent;
-              c.innerHTML = "";
-              c.appendChild(input);
-            });
-            edit.textContent = "Save";
-          } else {
-            const updated = {};
-            headers.forEach((h, i) => {
-              updated[h] = cells[i].querySelector("input").value;
-              cells[i].textContent = updated[h];
-            });
-            update(ref(db, `materials/${category}/${key}`), updated);
-            row.classList.remove("editing");
-            edit.textContent = "Edit";
-          }
-        };
-        const del = document.createElement("button");
-        del.textContent = "Delete";
-        del.onclick = () => {
-          if (confirm("Delete this item?")) remove(ref(db, `materials/${category}/${key}`));
-        };
-        action.appendChild(edit);
-        action.appendChild(del);
-      }
-      row.appendChild(action);
-      return row;
-    }
-
-    function showCategory(name) {
-      categories.forEach(cat => {
-        const el = document.getElementById("table-" + cat);
-        if (el) el.classList.add("hidden");
-      });
-      document.getElementById("table-" + name)?.classList.remove("hidden");
-      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-      Array.from(tabs.children).find(t => t.textContent === name)?.classList.add("active");
     }
   </script>
 </body>

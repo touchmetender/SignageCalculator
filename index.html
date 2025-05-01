@@ -1,161 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator - Database</title>
+  <meta charset="UTF-8">
+  <title>Signage Calculator – Material Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    :root {
-      --bg-color: #121212;
-      --text-color: #ffffff;
-      --card-color: #1e1e1e;
-      --highlight: #333;
-    }
-
-    [data-theme="light"] {
-      --bg-color: #ffffff;
-      --text-color: #000000;
-      --card-color: #f5f5f5;
-      --highlight: #e0e0e0;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
+    body.dark { background: #121212; color: white; }
+    body.light { background: #f4f4f4; color: black; }
     header {
-      background-color: var(--card-color);
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid var(--highlight);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 2rem; background: #202020; color: white;
+      position: sticky; top: 0; z-index: 100;
     }
-
-    .nav-left {
-      font-size: 1.5rem;
-      font-weight: bold;
+    .nav-links a {
+      margin-left: 1rem; text-decoration: none; color: white;
     }
-
-    .nav-right {
-      display: flex;
-      align-items: center;
-      gap: 1.2rem;
-    }
-
-    .nav-right a {
-      text-decoration: none;
-      color: var(--text-color);
-      font-weight: bold;
-    }
-
-    .nav-right a:hover {
-      text-decoration: underline;
-    }
-
+    .nav-links a:hover { text-decoration: underline; }
+    .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
     .table-container {
-      max-height: 70vh;
-      overflow-y: auto;
-      border: 1px solid var(--highlight);
-      margin: 1rem;
-      border-radius: 6px;
+      max-height: 70vh; overflow-y: auto; border: 1px solid #ccc; margin: 1rem;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      border: 1px solid var(--highlight);
-      text-align: left;
-    }
-
-    thead {
-      position: sticky;
-      top: 0;
-      background-color: var(--card-color);
-    }
-
-    .edit-row {
-      background-color: rgba(255, 255, 0, 0.2);
-    }
-
-    .top-bar {
-      margin: 1rem;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .auth-info {
-      font-size: 0.9rem;
-    }
-
-    .theme-toggle {
-      padding: 0.5rem;
-      border: none;
-      background-color: var(--highlight);
-      color: var(--text-color);
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .add-controls {
-      margin: 1rem;
-      display: flex;
-      gap: 1rem;
-    }
-
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      background-color: var(--highlight);
-      color: var(--text-color);
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    input, select {
-      padding: 0.4rem;
-      margin-right: 0.5rem;
-      border-radius: 4px;
-      border: 1px solid var(--highlight);
-    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: #333; color: white; position: sticky; top: 0; }
+    td, th { padding: 0.5rem; border: 1px solid #ddd; }
+    tr.editing { background: #fffae6; }
+    .actions button { margin: 0 2px; }
+    .filter-row input { width: 100%; padding: 2px; }
   </style>
 </head>
-<body>
+<body class="dark">
   <header>
-    <div class="nav-left">Signage Calculator</div>
-    <div class="nav-right">
-      <a href="index.html">Database</a>
-      <a href="calculation.html">Calculation</a>
-      <a href="quotation.html">Quotation</a>
-      <div>More ▼</div>
-      <span class="auth-info" id="userEmail">Log in as: -</span>
-      <button onclick="toggleTheme()" class="theme-toggle">Toggle Theme</button>
+    <div>
+      <strong>Signage Calculator</strong>
+      <span class="nav-links">
+        <a href="index.html">Database</a>
+        <a href="calculation.html">Calculation</a>
+        <a href="quotation.html">Quotation</a>
+        <a href="#">More ▼</a>
+      </span>
+    </div>
+    <div>
+      <span id="userEmail" class="auth-status"></span>
       <button onclick="logout()">Logout</button>
+      <button class="mode-toggle" onclick="toggleMode()">🌗</button>
     </div>
   </header>
 
-  <div class="add-controls">
-    <button onclick="addCategory()">Add Category</button>
-    <button onclick="addMaterial()">Add Material</button>
-  </div>
+  <main>
+    <div style="padding: 1rem;">
+      <h2>Material Database</h2>
+      <button onclick="addCategory()">+ Add Category</button>
+    </div>
+    <div class="table-container" id="materialTableContainer"></div>
+  </main>
 
-  <div class="table-container" id="materialTableContainer">
-    <!-- Material Table Loaded by JS -->
-  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-  <!-- Firebase App (v9 compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
-  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
       authDomain: "signagematerialdatabaseapp.firebaseapp.com",
@@ -163,101 +66,140 @@
       projectId: "signagematerialdatabaseapp",
       storageBucket: "signagematerialdatabaseapp.appspot.com",
       messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
-      measurementId: "G-R4EHYT0MW6"
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const dbRef = ref(db, 'materials');
+    let isAdmin = false;
+    let currentUser = null;
 
-    let currentUserEmail = "";
-    const ADMIN_EMAIL = "admin@sc.com"; // change to your real admin email
+    const tableContainer = document.getElementById("materialTableContainer");
 
-    auth.onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = "login.html";
-      } else {
-        currentUserEmail = user.email;
-        document.getElementById("userEmail").textContent = "Log in as: " + currentUserEmail;
-        loadMaterialDatabase();
-      }
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return location.href = "login.html";
+      currentUser = user;
+      document.getElementById("userEmail").textContent = `Logged in as: ${user.email}`;
+      isAdmin = (user.email === "YOUR_ADMIN_EMAIL@example.com"); // REPLACE with your admin email
+      loadData();
     });
 
     function logout() {
-      auth.signOut().then(() => {
-        window.location.href = "login.html";
+      signOut(auth).then(() => location.href = "login.html");
+    }
+
+    function toggleMode() {
+      document.body.classList.toggle("dark");
+      document.body.classList.toggle("light");
+    }
+
+    function loadData() {
+      onValue(dbRef, snapshot => {
+        const data = snapshot.val() || {};
+        renderTable(data);
       });
     }
 
-    function toggleTheme() {
-      const html = document.documentElement;
-      const current = html.getAttribute("data-theme");
-      html.setAttribute("data-theme", current === "light" ? "dark" : "light");
-    }
-
-    function addCategory() {
-      const name = prompt("Enter new category name:");
-      if (!name) return;
-      db.ref("materials/" + name).set({});
-    }
-
-    function addMaterial() {
-      const cat = prompt("Enter category to add to:");
-      const code = prompt("Enter material code:");
-      const name = prompt("Enter material name:");
-      const price = prompt("Enter material price:");
-      const unit = prompt("Enter unit:");
-      const ppu = prompt("Enter price per unit:");
-      const unit2 = prompt("Enter second unit:");
-
-      db.ref(`materials/${cat}/${code}`).set({
-        code, name, price, unit, ppu, unit2
-      });
-    }
-
-    function loadMaterialDatabase() {
-      db.ref("materials").once("value", (snapshot) => {
-        const data = snapshot.val();
-        let html = "<table><thead><tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Unit2</th><th>Actions</th></tr></thead><tbody>";
-        for (const category in data) {
-          html += `<tr><td colspan="7"><strong>${category}</strong></td></tr>`;
-          for (const key in data[category]) {
-            const mat = data[category][key];
-            html += `<tr id="${key}">
-              <td>${mat.code}</td>
-              <td contenteditable="${currentUserEmail === ADMIN_EMAIL}">${mat.name}</td>
-              <td contenteditable="${currentUserEmail === ADMIN_EMAIL}">${mat.price}</td>
-              <td contenteditable="${currentUserEmail === ADMIN_EMAIL}">${mat.unit}</td>
-              <td contenteditable="${currentUserEmail === ADMIN_EMAIL}">${mat.ppu}</td>
-              <td contenteditable="${currentUserEmail === ADMIN_EMAIL}">${mat.unit2}</td>
-              <td>${currentUserEmail === ADMIN_EMAIL ? `<button onclick="saveRow('${category}', '${key}')">Save</button><button onclick="deleteMaterial('${category}', '${key}')">Delete</button>` : '-'}</td>
-            </tr>`;
-          }
+    function renderTable(data) {
+      tableContainer.innerHTML = '';
+      Object.keys(data).forEach(category => {
+        const categoryDiv = document.createElement('div');
+        const title = document.createElement('h3');
+        title.textContent = category + (isAdmin ? ` ` : '');
+        if (isAdmin) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "Delete Category";
+          delBtn.onclick = () => remove(ref(db, `materials/${category}`));
+          title.appendChild(delBtn);
         }
-        html += "</tbody></table>";
-        document.getElementById("materialTableContainer").innerHTML = html;
+        categoryDiv.appendChild(title);
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Unit 2</th>${isAdmin ? '<th>Actions</th>' : ''}</tr>
+          <tr class="filter-row"><th><input></th><th><input></th><th><input></th><th><input></th><th><input></th><th><input></th>${isAdmin ? '<th></th>' : ''}</tr>
+        `;
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        Object.entries(data[category]).forEach(([key, item]) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${item.code}</td>
+            <td>${item.name}</td>
+            <td>${item.price}</td>
+            <td>${item.unit}</td>
+            <td>${item.price_per_unit}</td>
+            <td>${item.unit2}</td>
+            ${isAdmin ? `<td class="actions">
+              <button onclick="editRow('${category}', '${key}', this)">Edit</button>
+              <button onclick="deleteMaterial('${category}', '${key}')">Delete</button>
+            </td>` : ''}
+          `;
+          tbody.appendChild(row);
+        });
+
+        if (isAdmin) {
+          const addRow = document.createElement("tr");
+          addRow.innerHTML = `
+            <td><input id="code"></td>
+            <td><input id="name"></td>
+            <td><input id="price"></td>
+            <td><input id="unit"></td>
+            <td><input id="ppu"></td>
+            <td><input id="unit2"></td>
+            <td><button onclick="addMaterial('${category}')">Add Material</button></td>
+          `;
+          tbody.appendChild(addRow);
+        }
+
+        table.appendChild(tbody);
+        categoryDiv.appendChild(table);
+        tableContainer.appendChild(categoryDiv);
       });
     }
 
-    function saveRow(category, key) {
-      const row = document.getElementById(key).children;
-      db.ref(`materials/${category}/${key}`).set({
-        code: row[0].textContent.trim(),
-        name: row[1].textContent.trim(),
-        price: row[2].textContent.trim(),
-        unit: row[3].textContent.trim(),
-        ppu: row[4].textContent.trim(),
-        unit2: row[5].textContent.trim()
-      });
-      alert("Saved!");
+    window.editRow = function (cat, key, btn) {
+      const row = btn.closest('tr');
+      row.classList.add("editing");
+      const tds = row.querySelectorAll("td");
+      const values = Array.from(tds).slice(0, 6).map(td => td.textContent);
+      row.innerHTML = values.map(val => `<td><input value="${val}"></td>`).join("") +
+        `<td><button onclick="saveRow('${cat}', '${key}', this)">Save</button></td>`;
     }
 
-    function deleteMaterial(category, key) {
-      if (confirm("Delete material?")) {
-        db.ref(`materials/${category}/${key}`).remove();
-        loadMaterialDatabase();
+    window.saveRow = function (cat, key, btn) {
+      const row = btn.closest('tr');
+      const inputs = row.querySelectorAll("input");
+      const [code, name, price, unit, ppu, unit2] = Array.from(inputs).map(i => i.value);
+      update(ref(db, `materials/${cat}/${key}`), {
+        code, name, price, unit, price_per_unit: ppu, unit2
+      });
+    }
+
+    window.deleteMaterial = function (cat, key) {
+      remove(ref(db, `materials/${cat}/${key}`));
+    }
+
+    window.addCategory = function () {
+      const newCat = prompt("Enter new category name:");
+      if (newCat) {
+        set(ref(db, `materials/${newCat}`), {});
       }
+    }
+
+    window.addMaterial = function (cat) {
+      const code = document.getElementById("code").value;
+      const name = document.getElementById("name").value;
+      const price = document.getElementById("price").value;
+      const unit = document.getElementById("unit").value;
+      const ppu = document.getElementById("ppu").value;
+      const unit2 = document.getElementById("unit2").value;
+      const newRef = push(ref(db, `materials/${cat}`));
+      set(newRef, { code, name, price, unit, price_per_unit: ppu, unit2 });
     }
   </script>
 </body>

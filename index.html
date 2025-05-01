@@ -91,7 +91,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
@@ -249,54 +249,45 @@
           editing = !editing;
           if (editing) {
             row.classList.add("editing");
-            cells.forEach(c => {
+            cells.forEach((cell, i) => {
               const input = document.createElement("input");
-              input.value = c.textContent;
-              c.innerHTML = "";
-              c.appendChild(input);
+              input.value = cell.textContent;
+              cell.innerHTML = "";
+              cell.appendChild(input);
             });
-            editBtn.textContent = "Save";
           } else {
-            const updated = {};
-            headers.forEach((h, i) => {
-              updated[h] = cells[i].querySelector("input").value;
-              cells[i].textContent = updated[h];
-            });
-            update(ref(db, `${category}/${key}`), updated);
             row.classList.remove("editing");
-            editBtn.textContent = "Edit";
+            const updatedData = {};
+            cells.forEach((cell, i) => {
+              updatedData[headers[i]] = cell.firstChild.value;
+            });
+            update(ref(db, `${category}/${key}`), updatedData);
           }
         };
-
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.onclick = () => {
-          if (confirm("Delete this item?")) remove(ref(db, `${category}/${key}`));
-        };
-
         actionDiv.appendChild(editBtn);
-        actionDiv.appendChild(delBtn);
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.onclick = () => remove(ref(db, `${category}/${key}`));
+        actionDiv.appendChild(deleteBtn);
       }
+
       row.appendChild(actionDiv);
       return row;
     }
 
-    function filterTable(wrapper, index, value) {
+    function filterTable(wrapper, columnIndex, value) {
       const rows = wrapper.querySelectorAll(".row");
-      rows.forEach(row => {
-        const cell = row.children[index];
-        if (!cell || cell.querySelector("input")) return;
+      rows.forEach((row) => {
+        const cell = row.children[columnIndex];
         row.style.display = cell.textContent.toLowerCase().includes(value.toLowerCase()) ? "" : "none";
       });
     }
 
-    function showCategory(name) {
-      tableWrapper.innerHTML = "";
-      const category = name;
-      onValue(ref(db, category), (snapshot) => {
-        const materials = snapshot.val();
-        createCategoryTable(category, materials);
-      });
+    function showCategory(category) {
+      const allTables = tableWrapper.querySelectorAll(".table-wrapper > div");
+      allTables.forEach((table) => table.style.display = "none");
+      document.getElementById("table-" + category).style.display = "block";
     }
   </script>
 </body>

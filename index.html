@@ -2,117 +2,256 @@
 <html>
 <head>
   <title>Material Database</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: Arial; padding: 20px; }
-    #header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    #materialTable { border-collapse: collapse; width: 100%; }
-    #materialTable th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    #materialTable th { background: #eee; }
-    tbody { display: block; height: 400px; overflow-y: auto; }
-    thead, tbody tr { display: table; width: 100%; table-layout: fixed; }
-    .edit-row { background: #ffffcc; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f8f9fa;
+    }
+
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 20px;
+    }
+
+    .user-info {
+      font-size: 14px;
+    }
+
+    .logout-btn {
+      background-color: white;
+      color: #007bff;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+      margin-left: 10px;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    thead {
+      background-color: #343a40;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #dee2e6;
+    }
+
+    tbody {
+      display: block;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    tbody tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    tfoot {
+      font-weight: bold;
+    }
+
+    .edit-btn, .save-btn, .delete-btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+
+    .edit-btn { background-color: orange; color: white; }
+    .save-btn { background-color: green; color: white; }
+    .delete-btn { background-color: red; color: white; }
+
+    .highlight {
+      background-color: #fff3cd;
+    }
+
+    .controls {
+      margin-bottom: 15px;
+    }
+
+    .nav-links {
+      margin-top: 10px;
+    }
+
+    .nav-links a {
+      margin-right: 10px;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <div id="header">
-    <h2>Material Database</h2>
-    <div>
-      <span id="userEmail"></span>
-      <button onclick="logout()">Logout</button>
-      <button onclick="window.location.href='calculation.html'">Go to Calculation</button>
+  <header>
+    <h1>Material Database</h1>
+    <div class="user-info">
+      Logged in as: <span id="user-email"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-  </div>
+  </header>
 
-  <table id="materialTable">
-    <thead>
-      <tr><th>Code</th><th>Name</th><th>Price</th><th>Unit</th><th>Price/Unit</th><th>Unit</th><th>Action</th></tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
+  <main>
+    <div class="nav-links">
+      <a href="calculation.html">Go to Calculation Page</a> |
+      <a href="quotation.html">Quotation (Coming Soon)</a>
+    </div>
 
-  <!-- Firebase SDK and Configuration Inline -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <div class="controls" id="admin-controls" style="display: none;">
+      <button onclick="addCategory()">Add Category</button>
+      <button onclick="addMaterial()">Add Material</button>
+    </div>
 
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Price</th>
+          <th>Unit</th>
+          <th>Price per Unit</th>
+          <th>Unit (2)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="material-table-body"></tbody>
+    </table>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
       authDomain: "signagematerialdatabaseapp.firebaseapp.com",
       databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
       projectId: "signagematerialdatabaseapp",
-      storageBucket: "signagematerialdatabaseapp.firebasestorage.app",
+      storageBucket: "signagematerialdatabaseapp.appspot.com",
       messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8",
-      measurementId: "G-R4EHYT0MW6"
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
     };
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
-    const database = firebase.database();
+    const db = firebase.database();
 
-    // Check if user is logged in
-    const user = sessionStorage.getItem("user");
-    const role = sessionStorage.getItem("role");
-    if (!user) location.href = "login.html";
-    document.getElementById("userEmail").textContent = `Logged in as: ${user}`;
+    let userEmail = localStorage.getItem("user");
+    let role = localStorage.getItem("role");
 
-    // Handle logout
+    if (!userEmail) {
+      window.location.href = "login.html";
+    }
+
+    document.getElementById("user-email").innerText = userEmail;
+
+    if (role === "admin") {
+      document.getElementById("admin-controls").style.display = "block";
+    }
+
     function logout() {
-      firebase.auth().signOut().then(() => {
-        sessionStorage.clear();
+      auth.signOut().then(() => {
+        localStorage.clear();
         window.location.href = "login.html";
       });
     }
 
-    // Load materials from Firebase
-    const db = firebase.database().ref("materials");
-
-    db.on("value", snapshot => {
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = "";
-      snapshot.forEach(row => {
-        const mat = row.val();
-        const key = row.key;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${mat.code}</td>
-          <td><input value="${mat.name}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td><input value="${mat.price}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td>${mat.unit}</td>
-          <td><input value="${mat.pricePerUnit}" ${role !== 'admin' ? 'disabled' : ''}></td>
-          <td>${mat.unit2}</td>
-          <td>
-            ${role === 'admin' ? `<button onclick="save('${key}', this)">Save</button><button onclick="remove('${key}')">Delete</button>` : ''}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    });
-
-    // Save edited material data
-    function save(key, btn) {
-      const row = btn.parentElement.parentElement;
-      const inputs = row.querySelectorAll('input');
-      db.child(key).set({
-        code: row.cells[0].textContent,
-        name: inputs[0].value,
-        price: inputs[1].value,
-        unit: row.cells[3].textContent,
-        pricePerUnit: inputs[2].value,
-        unit2: row.cells[5].textContent,
+    function loadMaterials() {
+      db.ref("materials").on("value", (snapshot) => {
+        const table = document.getElementById("material-table-body");
+        table.innerHTML = "";
+        snapshot.forEach((catSnap) => {
+          catSnap.forEach((matSnap) => {
+            const mat = matSnap.val();
+            const key = matSnap.key;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${mat.code}</td>
+              <td contenteditable="${role === 'admin'}">${mat.name}</td>
+              <td contenteditable="${role === 'admin'}">${mat.price}</td>
+              <td contenteditable="${role === 'admin'}">${mat.unit}</td>
+              <td contenteditable="${role === 'admin'}">${mat.pricePerUnit}</td>
+              <td contenteditable="${role === 'admin'}">${mat.unit2}</td>
+              <td>
+                ${role === 'admin' ? `
+                  <button class="save-btn" onclick="saveMaterial('${catSnap.key}', '${key}', this)">Save</button>
+                  <button class="delete-btn" onclick="deleteMaterial('${catSnap.key}', '${key}')">Delete</button>
+                ` : ''}
+              </td>
+            `;
+            table.appendChild(tr);
+          });
+        });
       });
     }
 
-    // Delete material from database
-    function remove(key) {
-      if (confirm("Delete this item?")) {
-        db.child(key).remove();
+    function saveMaterial(category, id, btn) {
+      const row = btn.closest("tr");
+      const updatedMat = {
+        code: row.children[0].innerText,
+        name: row.children[1].innerText,
+        price: row.children[2].innerText,
+        unit: row.children[3].innerText,
+        pricePerUnit: row.children[4].innerText,
+        unit2: row.children[5].innerText,
+      };
+      db.ref(`materials/${category}/${id}`).set(updatedMat);
+    }
+
+    function deleteMaterial(category, id) {
+      db.ref(`materials/${category}/${id}`).remove();
+    }
+
+    function addCategory() {
+      const name = prompt("Enter new category name:");
+      if (name) {
+        db.ref("materials/" + name).set({});
       }
     }
-  </script>
 
+    function addMaterial() {
+      const category = prompt("Enter category to add material into:");
+      if (category) {
+        const newMatRef = db.ref("materials/" + category).push();
+        newMatRef.set({
+          code: "NEW",
+          name: "New Material",
+          price: "0",
+          unit: "Pcs",
+          pricePerUnit: "0",
+          unit2: "Pcs"
+        });
+      }
+    }
+
+    loadMaterials();
+  </script>
 </body>
 </html>

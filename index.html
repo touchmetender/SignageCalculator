@@ -34,17 +34,23 @@
       overflow-y: auto;
       margin: 20px;
       border-radius: 6px;
-      padding-top: 35px; /* Added padding to ensure the first row isn't hidden under the sticky header */
+      padding-top: 0;
     }
     .header-row, .filter-row, .row {
       display: flex; flex-wrap: nowrap;
       font-size: 14px;
     }
-    .header-row, .filter-row {
+    .header-row {
       position: sticky;
       top: 0;
       background: #333;
       color: white;
+      z-index: 11;
+    }
+    .filter-row {
+      position: sticky;
+      top: 32px;
+      background: #444;
       z-index: 10;
     }
     .filter-row input {
@@ -57,6 +63,7 @@
       padding: 6px;
       box-sizing: border-box;
       min-width: 100px;
+      color: black;
     }
     .row.editing { background: #fff8b3; }
     .action-cell button {
@@ -67,11 +74,6 @@
       cursor: pointer;
     }
     .action-cell button:hover { text-decoration: underline; }
-
-    /* Ensure text inside cells is black */
-    .table-wrapper .row > div {
-      color: black;
-    }
   </style>
 </head>
 <body class="dark">
@@ -115,7 +117,7 @@
     const auth = getAuth(app);
 
     let isAdmin = false;
-    const adminEmail = "admin@sc.com"; // ← REPLACE with your admin email
+    const adminEmail = "admin@sc.com"; // ← Replace with your admin email
 
     const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
     const tabs = document.getElementById("tabs");
@@ -174,20 +176,8 @@
     function createCategoryTable(category, materials) {
       const wrapper = document.createElement("div");
       wrapper.id = "table-" + category;
+      tableWrapper.innerHTML = ""; // Clear previous
       tableWrapper.appendChild(wrapper);
-
-      const filterRow = document.createElement("div");
-      filterRow.className = "filter-row";
-      headers.forEach((_, i) => {
-        const div = document.createElement("div");
-        const input = document.createElement("input");
-        input.placeholder = "Filter...";
-        input.oninput = () => filterTable(wrapper, i, input.value);
-        div.appendChild(input);
-        filterRow.appendChild(div);
-      });
-      filterRow.appendChild(document.createElement("div")); // For action col
-      wrapper.appendChild(filterRow);
 
       const headerRow = document.createElement("div");
       headerRow.className = "header-row";
@@ -200,6 +190,19 @@
       actionHead.textContent = "Action";
       headerRow.appendChild(actionHead);
       wrapper.appendChild(headerRow);
+
+      const filterRow = document.createElement("div");
+      filterRow.className = "filter-row";
+      headers.forEach((_, i) => {
+        const div = document.createElement("div");
+        const input = document.createElement("input");
+        input.placeholder = "Filter...";
+        input.oninput = () => filterTable(wrapper, i, input.value);
+        div.appendChild(input);
+        filterRow.appendChild(div);
+      });
+      filterRow.appendChild(document.createElement("div")); // Action column
+      wrapper.appendChild(filterRow);
 
       const rowsContainer = document.createElement("div");
       wrapper.appendChild(rowsContainer);
@@ -297,11 +300,12 @@
     }
 
     function showCategory(name) {
-      tableWrapper.innerHTML = "";
-      const category = name;
-      onValue(ref(db, category), (snapshot) => {
+      onValue(ref(db, name), (snapshot) => {
         const materials = snapshot.val();
-        createCategoryTable(category, materials);
+        createCategoryTable(name, materials);
+        Array.from(tabs.children).forEach(tab => {
+          tab.classList.toggle("active", tab.textContent === name);
+        });
       });
     }
   </script>

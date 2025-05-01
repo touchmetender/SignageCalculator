@@ -3,74 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator - Database</title>
+  <title>Signage Materials Database</title>
   <style>
-    body.dark { background: #1e1e1e; color: white; }
-    body.light { background: #f8f8f8; color: black; }
-    body { margin: 0; font-family: Arial, sans-serif; }
-
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #333;
-      color: white;
-      padding: 10px 20px;
-    }
-    .navbar .left { font-weight: bold; font-size: 18px; }
-    .navbar .right button {
-      margin-left: 10px; padding: 5px 10px; cursor: pointer;
-    }
-    .tabs { display: flex; gap: 10px; padding: 10px; flex-wrap: wrap; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #121212; color: #eee; }
+    h1 { padding: 20px; }
+    .tabs { display: flex; gap: 10px; padding: 0 20px; flex-wrap: wrap; align-items: center; }
     .tab, .add-cat-btn {
       padding: 10px 20px;
-      background: #ddd; border-radius: 5px; cursor: pointer;
+      background: #444;
+      border-radius: 5px;
+      cursor: pointer;
+      user-select: none;
     }
     .tab.active { background: #3498db; color: white; }
     .add-cat-btn { background: #2ecc71; color: white; border: none; }
-
+    #tables { padding: 20px; }
     .table-wrapper {
-      padding: 10px; margin: 10px;
-      background: white; border-radius: 8px; overflow-x: auto;
+      background: #1e1e1e; border: 1px solid #333; max-height: 70vh; overflow-y: auto;
     }
-    .table-wrapper.dark { background: #2e2e2e; }
-
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td {
-      border: 1px solid #ccc; padding: 6px; text-align: left;
+    .filter-row, .header-row, .row {
+      display: flex; width: 100%;
     }
-    th.sticky { position: sticky; top: 0; background: #f0f0f0; z-index: 1; }
-    .dark th.sticky { background: #3a3a3a; }
-
-    .action-btn { cursor: pointer; color: #007bff; background: none; border: none; }
+    .filter-row { position: sticky; top: 0; background: #222; z-index: 10; }
+    .header-row { position: sticky; top: 38px; background: #333; z-index: 9; }
+    .row > div, .header-row > div, .filter-row > div {
+      padding: 6px; border: 1px solid #444; box-sizing: border-box;
+    }
+    .col1 { width: 10%; } .col2 { width: 40%; } .col3 { width: 10%; }
+    .col4 { width: 8%; } .col5 { width: 15%; } .col6 { width: 10%; } .col7 { width: 7%; }
+    .filter-row input { width: 100%; padding: 4px; background: #444; color: white; border: none; }
+    .add-row { padding: 10px; text-align: right; background: #1e1e1e; border-top: 1px solid #333; }
+    .add-btn { background: #2ecc71; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+    .action-btn { cursor: pointer; background: none; border: none; color: #00aced; }
     .action-btn:hover { text-decoration: underline; }
-
-    .add-material-row input {
-      width: 100%; padding: 4px;
-    }
-
     .hidden { display: none; }
+    .editing { background: #222 !important; }
   </style>
 </head>
-<body class="dark">
-  <div class="navbar">
-    <div class="left">Signage Calculator</div>
-    <div class="right">
-      <span id="user-info"></span>
-      <button onclick="toggleTheme()">Toggle Mode</button>
-      <button onclick="location.href='calculation.html'">Calculation</button>
-      <button onclick="location.href='quotation.html'">Quotation</button>
-      <button onclick="logout()">Logout</button>
-    </div>
-  </div>
-
+<body>
+  <h1>Signage Material Database</h1>
   <div class="tabs" id="tabs"></div>
   <div id="tables"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, set, remove, push, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getDatabase, ref, onValue, push, update, remove, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
@@ -85,185 +62,171 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const auth = getAuth(app);
-    let currentUser = null;
-    let isAdmin = false;
 
-    const tablesDiv = document.getElementById("tables");
+    const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
     const tabs = document.getElementById("tabs");
+    const tables = document.getElementById("tables");
 
-    function toggleTheme() {
-      document.body.classList.toggle("dark");
-      document.body.classList.toggle("light");
-    }
+    let userRole = "user";
+    let categories = [];
 
-    function logout() {
-      signOut(auth).then(() => {
-        location.href = "login.html";
-      });
-    }
+    function initTabsAndTables(snapshot) {
+      categories = Object.keys(snapshot.val() || {});
+      tabs.innerHTML = "";
+      tables.innerHTML = "";
 
-    function buildUI(data) {
-      tabs.innerHTML = '';
-      tablesDiv.innerHTML = '';
-      for (let category in data) {
+      categories.forEach((cat, idx) => {
         const tab = document.createElement("div");
-        tab.className = "tab";
-        tab.textContent = category;
-        tab.onclick = () => {
-          document.querySelectorAll(".table-wrapper").forEach(w => w.classList.add("hidden"));
-          document.getElementById(`tbl-${category}`).classList.remove("hidden");
-          document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-          tab.classList.add("active");
-        };
+        tab.className = "tab" + (idx === 0 ? " active" : "");
+        tab.textContent = cat;
+        tab.onclick = () => showCategory(cat);
         tabs.appendChild(tab);
 
-        const tableWrapper = document.createElement("div");
-        tableWrapper.className = "table-wrapper";
-        tableWrapper.id = `tbl-${category}`;
-
-        const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        const headerRow = document.createElement("tr");
-        const filterRow = document.createElement("tr");
-
-        const cols = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
-        cols.forEach(col => {
-          const th = document.createElement("th");
-          th.className = "sticky";
-          th.textContent = col.replace(/_/g, " ");
-          headerRow.appendChild(th);
-
-          const filter = document.createElement("th");
-          const input = document.createElement("input");
-          input.oninput = () => filterTable(category, cols.indexOf(col), input.value);
-          filter.appendChild(input);
-          filterRow.appendChild(filter);
-        });
-
-        if (isAdmin) {
-          const th = document.createElement("th");
-          th.className = "sticky";
-          th.textContent = "Actions";
-          headerRow.appendChild(th);
-          filterRow.appendChild(document.createElement("th"));
-        }
-
-        thead.appendChild(filterRow);
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        const tbody = document.createElement("tbody");
-        const catData = data[category];
-        for (let key in catData) {
-          tbody.appendChild(buildRow(catData[key], category, key));
-        }
-
-        if (isAdmin) {
-          const addRow = document.createElement("tr");
-          addRow.className = "add-material-row";
-          cols.forEach(c => {
-            const td = document.createElement("td");
-            const input = document.createElement("input");
-            input.placeholder = c;
-            td.appendChild(input);
-            addRow.appendChild(td);
-          });
-
-          const tdAction = document.createElement("td");
-          const btn = document.createElement("button");
-          btn.textContent = "Add";
-          btn.onclick = () => {
-            const newData = {};
-            const inputs = addRow.querySelectorAll("input");
-            cols.forEach((c, i) => newData[c] = inputs[i].value.trim());
-            push(ref(db, category), newData);
-            inputs.forEach(i => i.value = "");
-          };
-          tdAction.appendChild(btn);
-          addRow.appendChild(tdAction);
-          tbody.appendChild(addRow);
-        }
-
-        table.appendChild(tbody);
-        tableWrapper.appendChild(table);
-        tablesDiv.appendChild(tableWrapper);
-      }
-
-      document.querySelector(".tab")?.click();
+        createCategoryTable(cat, idx === 0);
+      });
     }
 
-    function buildRow(data, category, key) {
-      const tr = document.createElement("tr");
-      const cols = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
-      const tds = [];
+    function createCategoryTable(cat, show) {
+      const wrapper = document.createElement("div");
+      wrapper.id = `table-${cat}`;
+      wrapper.className = "table-wrapper" + (show ? "" : " hidden");
 
-      cols.forEach(c => {
-        const td = document.createElement("td");
-        td.textContent = data[c] || "";
-        td.contentEditable = false;
-        tr.appendChild(td);
-        tds.push(td);
+      const filterRow = document.createElement("div");
+      filterRow.className = "filter-row";
+      headers.forEach((h, i) => {
+        const div = document.createElement("div");
+        div.className = `col${i + 1}`;
+        const input = document.createElement("input");
+        input.placeholder = "Filter";
+        input.oninput = () => filterTable(cat, i, input.value);
+        div.appendChild(input);
+        filterRow.appendChild(div);
+      });
+      filterRow.appendChild(document.createElement("div")).className = "col7";
+      wrapper.appendChild(filterRow);
+
+      const headerRow = document.createElement("div");
+      headerRow.className = "header-row";
+      headers.forEach((h, i) => {
+        const div = document.createElement("div");
+        div.textContent = h.replace(/_/g, " ");
+        div.className = `col${i + 1}`;
+        headerRow.appendChild(div);
+      });
+      const actHead = document.createElement("div");
+      actHead.textContent = "Action";
+      actHead.className = "col7";
+      headerRow.appendChild(actHead);
+      wrapper.appendChild(headerRow);
+
+      const rowsContainer = document.createElement("div");
+      rowsContainer.className = "rows";
+      wrapper.appendChild(rowsContainer);
+
+      onValue(ref(db, cat), (snap) => {
+        rowsContainer.innerHTML = "";
+        const data = snap.val();
+        if (data) {
+          for (let key in data) {
+            rowsContainer.appendChild(createRow(cat, key, data[key]));
+          }
+        }
       });
 
-      if (isAdmin) {
-        const tdAction = document.createElement("td");
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        editBtn.className = "action-btn";
-        editBtn.onclick = () => {
-          const editing = editBtn.textContent === "Edit";
-          tds.forEach(td => {
-            td.contentEditable = editing;
-            td.style.background = editing ? "#ffe" : "";
+      if (userRole === "admin") {
+        const addRow = document.createElement("div");
+        addRow.className = "add-row";
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-btn";
+        addBtn.textContent = "Add New Row";
+        addBtn.onclick = () => {
+          const newKey = push(ref(db, cat)).key;
+          const newData = {};
+          headers.forEach(h => newData[h] = "");
+          set(ref(db, `${cat}/${newKey}`), newData);
+        };
+        addRow.appendChild(addBtn);
+        wrapper.appendChild(addRow);
+      }
+
+      tables.appendChild(wrapper);
+    }
+
+    function createRow(cat, key, rowData) {
+      const row = document.createElement("div");
+      row.className = "row";
+      const cells = [];
+
+      headers.forEach((h, i) => {
+        const div = document.createElement("div");
+        div.className = `col${i + 1}`;
+        div.textContent = rowData[h] || "";
+        div.contentEditable = false;
+        row.appendChild(div);
+        cells.push(div);
+      });
+
+      const actions = document.createElement("div");
+      actions.className = "col7";
+      if (userRole === "admin") {
+        const edit = document.createElement("button");
+        edit.textContent = "Edit";
+        edit.className = "action-btn";
+        edit.onclick = () => {
+          const editing = edit.textContent === "Edit";
+          cells.forEach(cell => {
+            cell.contentEditable = editing;
+            cell.classList.toggle("editing", editing);
           });
-          if (editing) {
-            editBtn.textContent = "Save";
-          } else {
-            editBtn.textContent = "Edit";
+          edit.textContent = editing ? "Save" : "Edit";
+          if (!editing) {
             const updated = {};
-            cols.forEach((c, i) => updated[c] = tds[i].textContent.trim());
-            update(ref(db, `${category}/${key}`), updated);
+            headers.forEach((h, i) => updated[h] = cells[i].textContent.trim());
+            update(ref(db, `${cat}/${key}`), updated);
           }
         };
-
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.className = "action-btn";
-        delBtn.onclick = () => {
-          if (confirm("Delete this item?")) {
-            remove(ref(db, `${category}/${key}`));
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.className = "action-btn";
+        del.onclick = () => {
+          if (confirm("Delete this row?")) {
+            remove(ref(db, `${cat}/${key}`));
           }
         };
-
-        tdAction.appendChild(editBtn);
-        tdAction.appendChild(document.createTextNode(" "));
-        tdAction.appendChild(delBtn);
-        tr.appendChild(tdAction);
+        actions.appendChild(edit);
+        actions.appendChild(document.createTextNode(" "));
+        actions.appendChild(del);
       }
-
-      return tr;
+      row.appendChild(actions);
+      return row;
     }
 
-    function filterTable(category, index, value) {
-      const rows = document.querySelectorAll(`#tbl-${category} tbody tr`);
+    function filterTable(cat, colIdx, val) {
+      const wrapper = document.getElementById(`table-${cat}`);
+      const rows = wrapper.querySelectorAll(".rows .row");
       rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        if (!cells[index]) return;
-        const match = cells[index].textContent.toLowerCase().includes(value.toLowerCase());
-        row.style.display = match ? "" : "none";
+        const cell = row.children[colIdx];
+        row.style.display = cell.textContent.toLowerCase().includes(val.toLowerCase()) ? "" : "none";
       });
     }
 
-    onAuthStateChanged(auth, user => {
-      if (!user) return location.href = "login.html";
-      currentUser = user;
-      document.getElementById("user-info").textContent = `Logged in as: ${user.email}`;
-      isAdmin = user.email === "admin@example.com"; // Set your real admin email
-      onValue(ref(db), snapshot => {
-        const data = snapshot.val();
-        if (data) buildUI(data);
+    function showCategory(name) {
+      categories.forEach(cat => {
+        document.getElementById("table-" + cat).classList.add("hidden");
       });
+      document.getElementById("table-" + name).classList.remove("hidden");
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+      Array.from(tabs.children).find(t => t.textContent === name)?.classList.add("active");
+    }
+
+    // Role Detection
+    const userEmail = sessionStorage.getItem("email") || "";
+    if (userEmail === "admin@sc.com") {
+      userRole = "admin";
+    }
+
+    onValue(ref(db), (snapshot) => {
+      initTabsAndTables(snapshot);
     });
   </script>
 </body>

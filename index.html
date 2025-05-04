@@ -99,19 +99,9 @@
   <div id="tableWrapper" class="table-wrapper"></div>
 
   <script type="module">
-    // Firebase configuration
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      get,
-      child
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
@@ -218,15 +208,15 @@
       wrapper.appendChild(rowsContainer);
 
       // Dummy row to fix skip issue
-     // const dummyRow = document.createElement("div");
-     // dummyRow.className = "row";
-     // headers.forEach(() => {
-     //   const div = document.createElement("div");
-     //   div.textContent = "item";
-     //   dummyRow.appendChild(div);
-     // });
-     // dummyRow.appendChild(document.createElement("div"));
-     // rowsContainer.appendChild(dummyRow);
+    //  const dummyRow = document.createElement("div");
+    //  dummyRow.className = "row";
+    //  headers.forEach(() => {
+    //    const div = document.createElement("div");
+    //    div.textContent = "item";
+    //    dummyRow.appendChild(div);
+    //  });
+    //  dummyRow.appendChild(document.createElement("div"));
+    //  rowsContainer.appendChild(dummyRow);
 
       Object.entries(materials).forEach(([key, data]) => {
         rowsContainer.appendChild(createRow(category, key, data));

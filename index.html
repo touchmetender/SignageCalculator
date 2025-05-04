@@ -99,9 +99,19 @@
   <div id="tableWrapper" class="table-wrapper"></div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    // Firebase configuration
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      child
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
@@ -118,7 +128,7 @@
     const auth = getAuth(app);
 
     let isAdmin = false;
-    const adminEmail = "admin@example.com"; // ← Replace with your actual admin email
+    const adminEmail = "admin@sc.com"; // ← Replace with your actual admin email
 
     const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
     const tabs = document.getElementById("tabs");

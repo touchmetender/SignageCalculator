@@ -208,15 +208,15 @@
       wrapper.appendChild(rowsContainer);
 
       // Dummy row to fix skip issue
-      const dummyRow = document.createElement("div");
-      dummyRow.className = "row";
-      headers.forEach(() => {
-        const div = document.createElement("div");
-        div.textContent = "item";
-        dummyRow.appendChild(div);
-      });
-      dummyRow.appendChild(document.createElement("div"));
-      rowsContainer.appendChild(dummyRow);
+     // const dummyRow = document.createElement("div");
+     // dummyRow.className = "row";
+     // headers.forEach(() => {
+     //   const div = document.createElement("div");
+     //   div.textContent = "item";
+     //   dummyRow.appendChild(div);
+     // });
+     // dummyRow.appendChild(document.createElement("div"));
+     // rowsContainer.appendChild(dummyRow);
 
       Object.entries(materials).forEach(([key, data]) => {
         rowsContainer.appendChild(createRow(category, key, data));

@@ -1,204 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Signage Calculator</title>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signage Calculator – Calculation</title>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f8f9fa;
-    }
-
+    body.dark { background: #121212; color: white; }
+    body.light { background: #f4f4f4; color: black; }
     header {
-      background: #007bff;
-      color: white;
-      padding: 10px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 2rem; background: #202020; color: white;
+      position: sticky; top: 0; z-index: 100;
     }
-
-    .user-info {
-      font-size: 14px;
-    }
-
-    .logout-btn {
-      background: white;
-      color: #007bff;
-      padding: 4px 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    main {
-      padding: 20px;
-    }
-
     .nav-links a {
-      margin-right: 10px;
-      text-decoration: none;
-      color: #007bff;
-      font-weight: bold;
+      margin-left: 1rem; text-decoration: none; color: white;
     }
-
-    label, input, select, button {
-      display: block;
-      margin: 10px 0;
+    .nav-links a:hover { text-decoration: underline; }
+    .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+    section { margin-bottom: 30px; }
+    label { display: block; margin-top: 10px; }
+    input, select {
+      width: 100%; padding: 8px; margin-top: 5px;
+      border-radius: 4px; border: 1px solid #ccc;
     }
-
-    input[type="text"], input[type="number"], select {
-      padding: 8px;
-      width: 100%;
-      max-width: 400px;
-    }
-
+    .result { font-weight: bold; margin-top: 10px; }
     button {
-      padding: 10px 20px;
-      background-color: #28a745;
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      background: #d4edda;
-      border: 1px solid #c3e6cb;
-      color: #155724;
-      max-width: 400px;
+      margin-top: 10px; padding: 8px 16px;
+      background: #ff9800; border: none; color: white;
+      border-radius: 4px; cursor: pointer;
     }
   </style>
 </head>
-<body>
+<body class="dark">
   <header>
-    <h1>Signage Calculator</h1>
-    <div class="user-info">
-      Logged in as: <span id="user-email"></span>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+    <div>
+      <strong>Signage Calculator</strong>
+      <span class="nav-links">
+        <a href="index.html">Database</a>
+        <a href="calculation.html">Calculation</a>
+        <a href="quotation.html">Quotation</a>
+        <a href="#">More ▼</a>
+      </span>
+    </div>
+    <div>
+      <span id="userEmail" class="auth-status"></span>
+      <button onclick="logout()">Logout</button>
+      <button class="mode-toggle" onclick="toggleMode()">🌗</button>
     </div>
   </header>
 
   <main>
-    <div class="nav-links">
-      <a href="index.html">Material Database</a> |
-      <a href="quotation.html">Quotation (Coming Soon)</a>
-    </div>
+    <section>
+      <h2>Rectangular Layer Dimensions</h2>
+      <label>Width (m): <input type="number" id="rectWidth" /></label>
+      <label>Height (m): <input type="number" id="rectHeight" /></label>
+      <div class="result">Area: <span id="rectArea">0</span> m²</div>
+    </section>
 
-    <label for="ref">Reference Number</label>
-    <input type="text" id="ref" placeholder="e.g. REF-001" />
+    <section>
+      <h2>Circular Layer Dimensions</h2>
+      <label>Diameter (m): <input type="number" id="circleDiameter" /></label>
+      <div class="result">Area: <span id="circleArea">0</span> m²</div>
+    </section>
 
-    <label for="material">Select Material</label>
-    <select id="material"></select>
-
-    <label for="length">Length (m)</label>
-    <input type="number" id="length" placeholder="e.g. 2.5" />
-
-    <label for="width">Width (m)</label>
-    <input type="number" id="width" placeholder="e.g. 1.2" />
-
-    <label for="quantity">Quantity</label>
-    <input type="number" id="quantity" placeholder="e.g. 10" />
-
-    <button onclick="calculate()">Calculate Total</button>
-
-    <div class="result" id="result" style="display:none;"></div>
+    <section>
+      <h2>Material Cost Calculation</h2>
+      <label>Select Material:
+        <select id="materialSelect"></select>
+      </label>
+      <label>Total Area (m²): <input type="number" id="totalArea" /></label>
+      <div class="result">Material Price per Unit: <span id="materialPrice">0</span></div>
+      <div class="result">Total Material Cost: <span id="materialCost">0</span></div>
+    </section>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
-      authDomain: "signagematerialdatabaseapp.firebaseapp.com",
-      databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
-      projectId: "signagematerialdatabaseapp",
-      storageBucket: "signagematerialdatabaseapp.appspot.com",
-      messagingSenderId: "276886100857",
-      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-
-    let userEmail = localStorage.getItem("user");
-    if (!userEmail) window.location.href = "login.html";
-    document.getElementById("user-email").innerText = userEmail;
-
-    function logout() {
-      auth.signOut().then(() => {
-        localStorage.clear();
-        window.location.href = "login.html";
-      });
-    }
-
-    let materialData = {};
-
-    function loadMaterials() {
-      db.ref("materials").once("value", snapshot => {
-        const select = document.getElementById("material");
-        snapshot.forEach(catSnap => {
-          catSnap.forEach(matSnap => {
-            const mat = matSnap.val();
-            const fullKey = `${catSnap.key}/${matSnap.key}`;
-            materialData[fullKey] = mat;
-            const option = document.createElement("option");
-            option.value = fullKey;
-            option.textContent = `${mat.code} - ${mat.name}`;
-            select.appendChild(option);
-          });
-        });
-      });
-    }
-
-    function calculate() {
-      const ref = document.getElementById("ref").value.trim();
-      const selected = document.getElementById("material").value;
-      const length = parseFloat(document.getElementById("length").value);
-      const width = parseFloat(document.getElementById("width").value);
-      const qty = parseInt(document.getElementById("quantity").value);
-
-      if (!ref || !selected || isNaN(length) || isNaN(width) || isNaN(qty)) {
-        alert("Please fill all fields correctly.");
-        return;
-      }
-
-      const mat = materialData[selected];
-      const area = length * width;
-      const cost = parseFloat(mat.pricePerUnit) * area * qty;
-
-      const resultBox = document.getElementById("result");
-      resultBox.innerHTML = `
-        <strong>Reference:</strong> ${ref}<br>
-        <strong>Material:</strong> ${mat.name}<br>
-        <strong>Area:</strong> ${area.toFixed(2)} m²<br>
-        <strong>Quantity:</strong> ${qty}<br>
-        <strong>Total Cost:</strong> AED ${cost.toFixed(2)}
-      `;
-      resultBox.style.display = "block";
-
-      // Save to DB under reference number
-      db.ref("calculations/" + ref).set({
-        reference: ref,
-        material: mat.name,
-        code: mat.code,
-        area: area.toFixed(2),
-        quantity: qty,
-        totalCost: cost.toFixed(2),
-        user: userEmail,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    loadMaterials();
-  </script>
+  <script type="module" src="assets/calculation.js"></script>
 </body>
 </html>

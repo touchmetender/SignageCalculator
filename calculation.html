@@ -3,129 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator – Calculation</title>
+  <title>Signage Calculator</title>
   <style>
-    body.dark { background: #121212; color: white; }
-    body.light { background: #f4f4f4; color: black; }
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem 2rem; background: #202020; color: white;
-      position: sticky; top: 0; z-index: 100;
+    body.dark {
+      background-color: #121212;
+      color: #eee;
     }
-    .nav-links a {
-      margin-left: 1rem; text-decoration: none; color: white;
+    body.light {
+      background-color: #fff;
+      color: #000;
     }
-    .nav-links a:hover { text-decoration: underline; }
-    .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
-    .container {
-      padding: 20px;
+    .header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .section {
-      margin-bottom: 30px;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background: white;
-      color: black;
-    }
-    .dark .section {
-      background: #1e1e1e;
-      color: white;
-    }
-    .section h2 {
-      margin-top: 0;
+    .header button {
+      margin-left: 10px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 1em;
     }
     th, td {
-      border: 1px solid #999;
-      padding: 8px;
+      border: 1px solid #ccc;
+      padding: 6px;
       text-align: center;
     }
-    input, select {
+    select, input {
       width: 100%;
-      padding: 6px;
     }
-    button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    .section {
+      margin-bottom: 2em;
     }
-    button:hover {
-      background: #45a049;
+    .total {
+      font-size: 1.5em;
+      margin-top: 20px;
     }
   </style>
 </head>
-<body class="dark">
-  <header>
+<body>
+  <div class="header">
     <div>
       <strong>Signage Calculator</strong>
-      <span class="nav-links">
-        <a href="index.html">Database</a>
-        <a href="calculation.html">Calculation</a>
-        <a href="quotation.html">Quotation</a>
-        <a href="#">More ▼</a>
-      </span>
+      <span id="userEmail"></span>
     </div>
     <div>
-      <span id="userEmail" class="auth-status"></span>
+      <button onclick="toggleMode()">Toggle Theme</button>
       <button onclick="logout()">Logout</button>
-      <button class="mode-toggle" onclick="toggleMode()">🌗</button>
     </div>
-  </header>
+  </div>
 
-  <div class="container">
-    <div class="section">
-      <h2>Rectangular Layers</h2>
-      <table id="rectTable">
-        <thead>
-          <tr>
-            <th>Width (m)</th>
-            <th>Height (m)</th>
-            <th>Depth (m, optional)</th>
-            <th>Category</th>
-            <th>Material</th>
-            <th>Area</th>
-            <th>Unit Price</th>
-            <th>Cost</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="addRectRow()">+ Add Rectangular Layer</button>
-    </div>
+  <div class="section">
+    <h2>Rectangular Layers</h2>
+    <table id="rectTable">
+      <thead>
+        <tr>
+          <th>Width (m)</th>
+          <th>Height (m)</th>
+          <th>Depth (m)</th>
+          <th>Category</th>
+          <th>Material</th>
+          <th>Area</th>
+          <th>Price</th>
+          <th>Cost</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addRectRow()">➕ Add Rectangular Layer</button>
+  </div>
 
-    <div class="section">
-      <h2>Circular Layers</h2>
-      <table id="circleTable">
-        <thead>
-          <tr>
-            <th>Diameter (m)</th>
-            <th>Category</th>
-            <th>Material</th>
-            <th>Area</th>
-            <th>Unit Price</th>
-            <th>Cost</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="addCircleRow()">+ Add Circular Layer</button>
-    </div>
+  <div class="section">
+    <h2>Circular Layers</h2>
+    <table id="circleTable">
+      <thead>
+        <tr>
+          <th>Diameter (m)</th>
+          <th>Category</th>
+          <th>Material</th>
+          <th>Area</th>
+          <th>Price</th>
+          <th>Cost</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addCircleRow()">➕ Add Circular Layer</button>
+  </div>
 
-    <div class="section">
-      <h2>Total Material Cost</h2>
-      <p><strong id="totalCost">₱0.00</strong></p>
-    </div>
+  <div class="total">
+    Total Material Cost: <span id="totalCost">₱0.00</span>
   </div>
 
   <script type="module">
@@ -174,7 +148,7 @@
       addCircleRow();
     });
 
-    function addRectRow() {
+    window.addRectRow = function () {
       const tbody = document.querySelector("#rectTable tbody");
       const tr = document.createElement("tr");
 
@@ -182,42 +156,63 @@
         <td><input type="number" step="0.01" class="w"/></td>
         <td><input type="number" step="0.01" class="h"/></td>
         <td><input type="number" step="0.01" class="d"/></td>
-        <td><select class="cat" onchange="populateMaterialOptions(this)"></select></td>
-        <td><select class="mat" onchange="updateCost(this)"></select></td>
+        <td><select class="cat"></select></td>
+        <td><select class="mat"></select></td>
         <td class="area">0</td>
         <td class="price">0</td>
         <td class="cost">0</td>
         <td><button onclick="this.closest('tr').remove(); calculateTotal()">🗑</button></td>
       `;
       tbody.appendChild(tr);
+
       populateCategoryOptions(tr.querySelector(".cat"));
+      setupRowEvents(tr);
     }
 
-    function addCircleRow() {
+    window.addCircleRow = function () {
       const tbody = document.querySelector("#circleTable tbody");
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
         <td><input type="number" step="0.01" class="dia"/></td>
-        <td><select class="cat" onchange="populateMaterialOptions(this)"></select></td>
-        <td><select class="mat" onchange="updateCost(this)"></select></td>
+        <td><select class="cat"></select></td>
+        <td><select class="mat"></select></td>
         <td class="area">0</td>
         <td class="price">0</td>
         <td class="cost">0</td>
         <td><button onclick="this.closest('tr').remove(); calculateTotal()">🗑</button></td>
       `;
       tbody.appendChild(tr);
+
       populateCategoryOptions(tr.querySelector(".cat"));
+      setupRowEvents(tr);
     }
 
-    window.populateCategoryOptions = function(select) {
+    function setupRowEvents(row) {
+      const catSelect = row.querySelector(".cat");
+      const matSelect = row.querySelector(".mat");
+
+      catSelect.addEventListener("change", () => {
+        populateMaterialOptions(catSelect);
+      });
+
+      matSelect.addEventListener("change", () => {
+        updateCost(matSelect);
+      });
+
+      row.querySelectorAll("input").forEach(input => {
+        input.addEventListener("input", () => updateCost(matSelect));
+      });
+    }
+
+    function populateCategoryOptions(select) {
       select.innerHTML = `<option value="">Select</option>`;
       Object.keys(materials).forEach(cat => {
         select.innerHTML += `<option value="${cat}">${cat}</option>`;
       });
     }
 
-    window.populateMaterialOptions = function(catSelect) {
+    function populateMaterialOptions(catSelect) {
       const row = catSelect.closest("tr");
       const matSelect = row.querySelector(".mat");
       const selectedCat = catSelect.value;
@@ -227,9 +222,10 @@
           matSelect.innerHTML += `<option value="${mat.material_price}" data-name="${mat.material_name}">${mat.material_name}</option>`;
         });
       }
+      updateCost(matSelect);
     }
 
-    window.updateCost = function(matSelect) {
+    function updateCost(matSelect) {
       const row = matSelect.closest("tr");
       const price = parseFloat(matSelect.value) || 0;
       row.querySelector(".price").textContent = price.toFixed(2);
@@ -258,12 +254,6 @@
       });
       document.getElementById("totalCost").textContent = `₱${total.toFixed(2)}`;
     }
-
-    document.querySelectorAll("input, select").forEach(el => {
-      el.addEventListener("input", () => {
-        if (el.classList.contains("mat")) updateCost(el);
-      });
-    });
   </script>
 </body>
 </html>

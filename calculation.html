@@ -3,79 +3,214 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator – Calculation</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Calculation</title>
   <style>
-    body.dark { background: #121212; color: white; }
-    body.light { background: #f4f4f4; color: black; }
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem 2rem; background: #202020; color: white;
-      position: sticky; top: 0; z-index: 100;
-    }
-    .nav-links a {
-      margin-left: 1rem; text-decoration: none; color: white;
-    }
-    .nav-links a:hover { text-decoration: underline; }
-    .mode-toggle, .auth-status { margin-left: 1rem; cursor: pointer; }
-    main { padding: 20px; max-width: 1000px; margin: auto; }
-    section { margin-bottom: 30px; }
-    label { display: block; margin-top: 10px; }
-    input, select {
-      width: 100%; padding: 8px; margin-top: 5px;
-      border-radius: 4px; border: 1px solid #ccc;
-    }
-    .result { font-weight: bold; margin-top: 10px; }
-    button {
-      margin-top: 10px; padding: 8px 16px;
-      background: #ff9800; border: none; color: white;
-      border-radius: 4px; cursor: pointer;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    .section { margin-bottom: 40px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+    .btn { padding: 5px 10px; margin: 10px 0; background-color: #007bff; color: white; border: none; cursor: pointer; }
+    .btn:hover { background-color: #0056b3; }
   </style>
 </head>
-<body class="dark">
-  <header>
-    <div>
-      <strong>Signage Calculator</strong>
-      <span class="nav-links">
-        <a href="index.html">Database</a>
-        <a href="calculation.html">Calculation</a>
-        <a href="quotation.html">Quotation</a>
-        <a href="#">More ▼</a>
-      </span>
-    </div>
-    <div>
-      <span id="userEmail" class="auth-status"></span>
-      <button onclick="logout()">Logout</button>
-      <button class="mode-toggle" onclick="toggleMode()">🌗</button>
-    </div>
-  </header>
+<body>
+  <h1>Calculation Page</h1>
 
-  <main>
-    <section>
-      <h2>Rectangular Layer Dimensions</h2>
-      <label>Width (m): <input type="number" id="rectWidth" /></label>
-      <label>Height (m): <input type="number" id="rectHeight" /></label>
-      <div class="result">Area: <span id="rectArea">0</span> m²</div>
-    </section>
+  <div class="section" id="rectangular-section">
+    <h2>Rectangular Layer Dimensions</h2>
+    <table id="rectangular-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Width (mm)</th>
+          <th>Height (mm)</th>
+          <th>Depth (mm)</th>
+          <th>Area (m² or m³)</th>
+          <th>Category</th>
+          <th>Material</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn" onclick="addRectangularRow()">Add More Item</button>
+    <p>Total Area (m²): <span id="total-rect-m2">0</span></p>
+    <p>Total Area (m³): <span id="total-rect-m3">0</span></p>
+    <p>Material Cost: <span id="rect-cost">0</span></p>
+  </div>
 
-    <section>
-      <h2>Circular Layer Dimensions</h2>
-      <label>Diameter (m): <input type="number" id="circleDiameter" /></label>
-      <div class="result">Area: <span id="circleArea">0</span> m²</div>
-    </section>
+  <div class="section" id="circular-section">
+    <h2>Circular Layer Dimensions</h2>
+    <table id="circular-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Width (mm)</th>
+          <th>Area (m²)</th>
+          <th>Category</th>
+          <th>Material</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn" onclick="addCircularRow()">Add More Item</button>
+    <p>Total Area (m²): <span id="total-circ-m2">0</span></p>
+    <p>Material Cost: <span id="circ-cost">0</span></p>
+  </div>
 
-    <section>
-      <h2>Material Cost Calculation</h2>
-      <label>Select Material:
-        <select id="materialSelect"></select>
-      </label>
-      <label>Total Area (m²): <input type="number" id="totalArea" /></label>
-      <div class="result">Material Price per Unit: <span id="materialPrice">0</span></div>
-      <div class="result">Total Material Cost: <span id="materialCost">0</span></div>
-    </section>
-  </main>
+  <div class="section">
+    <h2>Total Material Cost</h2>
+    <p>Total Material Cost: <span id="total-cost">0</span></p>
+  </div>
 
-  <script type="module" src="assets/calculation.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+      authDomain: "signagematerialdatabaseapp.firebaseapp.com",
+      databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
+      projectId: "signagematerialdatabaseapp",
+      storageBucket: "signagematerialdatabaseapp.appspot.com",
+      messagingSenderId: "276886100857",
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    let materialData = {};
+    const categories = [];
+
+    function createOption(text, value) {
+      const opt = document.createElement("option");
+      opt.text = text;
+      opt.value = value;
+      return opt;
+    }
+
+    function populateDropdown(select, options) {
+      select.innerHTML = "";
+      options.forEach(opt => select.appendChild(opt));
+    }
+
+    async function fetchMaterials() {
+      const snapshot = await get(child(ref(db), 'materials'));
+      if (snapshot.exists()) {
+        materialData = snapshot.val();
+        for (const category in materialData) {
+          categories.push(category);
+        }
+      }
+    }
+
+    function addRectangularRow() {
+      const table = document.getElementById("rectangular-table").getElementsByTagName("tbody")[0];
+      const row = table.insertRow();
+      const idx = table.rows.length;
+
+      row.insertCell().textContent = idx;
+      const width = row.insertCell().appendChild(document.createElement("input"));
+      const height = row.insertCell().appendChild(document.createElement("input"));
+      const depth = row.insertCell().appendChild(document.createElement("input"));
+      const areaCell = row.insertCell();
+      const category = row.insertCell().appendChild(document.createElement("select"));
+      const material = row.insertCell().appendChild(document.createElement("select"));
+
+      populateDropdown(category, categories.map(c => createOption(c, c)));
+
+      category.onchange = () => {
+        const mats = materialData[category.value] || {};
+        const opts = Object.entries(mats).map(([k, v]) =>
+          createOption(`${v.material_name} (${v.material_price})`, k)
+        );
+        populateDropdown(material, opts);
+      };
+
+      [width, height, depth].forEach(input => input.oninput = () => {
+        const w = +width.value;
+        const h = +height.value;
+        const d = +depth.value;
+        let area = 0;
+        if (w && h && d) {
+          area = (w / 1000) * (h / 1000) * (d / 1000);
+        } else if (w && h) {
+          area = (w / 1000) * (h / 1000);
+        }
+        areaCell.textContent = area.toFixed(3);
+        updateTotals();
+      });
+    }
+
+    function addCircularRow() {
+      const table = document.getElementById("circular-table").getElementsByTagName("tbody")[0];
+      const row = table.insertRow();
+      const idx = table.rows.length;
+
+      row.insertCell().textContent = idx;
+      const width = row.insertCell().appendChild(document.createElement("input"));
+      const areaCell = row.insertCell();
+      const category = row.insertCell().appendChild(document.createElement("select"));
+      const material = row.insertCell().appendChild(document.createElement("select"));
+
+      populateDropdown(category, categories.map(c => createOption(c, c)));
+
+      category.onchange = () => {
+        const mats = materialData[category.value] || {};
+        const opts = Object.entries(mats).map(([k, v]) =>
+          createOption(`${v.material_name} (${v.material_price})`, k)
+        );
+        populateDropdown(material, opts);
+      };
+
+      width.oninput = () => {
+        const r = (+width.value / 2) / 1000;
+        const area = Math.PI * r * r;
+        areaCell.textContent = area.toFixed(3);
+        updateTotals();
+      };
+    }
+
+    function updateTotals() {
+      let m2 = 0, m3 = 0, costRect = 0, costCirc = 0;
+      document.querySelectorAll("#rectangular-table tbody tr").forEach(row => {
+        const area = parseFloat(row.cells[4].textContent);
+        const category = row.cells[5].querySelector("select")?.value;
+        const materialKey = row.cells[6].querySelector("select")?.value;
+        if (!isNaN(area) && category && materialKey) {
+          const mat = materialData[category]?.[materialKey];
+          const price = parseFloat(mat?.material_price || 0);
+          const d = row.cells[3].querySelector("input").value;
+          if (d) m3 += area;
+          else m2 += area;
+          costRect += area * price;
+        }
+      });
+
+      document.querySelectorAll("#circular-table tbody tr").forEach(row => {
+        const area = parseFloat(row.cells[2].textContent);
+        const category = row.cells[3].querySelector("select")?.value;
+        const materialKey = row.cells[4].querySelector("select")?.value;
+        if (!isNaN(area) && category && materialKey) {
+          const mat = materialData[category]?.[materialKey];
+          const price = parseFloat(mat?.material_price || 0);
+          costCirc += area * price;
+        }
+      });
+
+      document.getElementById("total-rect-m2").textContent = m2.toFixed(2);
+      document.getElementById("total-rect-m3").textContent = m3.toFixed(2);
+      document.getElementById("rect-cost").textContent = costRect.toFixed(2);
+      document.getElementById("circ-cost").textContent = costCirc.toFixed(2);
+      document.getElementById("total-cost").textContent = (costRect + costCirc).toFixed(2);
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await fetchMaterials();
+      addRectangularRow();
+      addCircularRow();
+    });
+  </script>
 </body>
 </html>

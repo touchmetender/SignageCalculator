@@ -318,13 +318,6 @@
   });
   applyTheme(); // Initialize on load
 
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      document.getElementById("userEmail").textContent = user.email;
-    } else {
-      window.location.href = "login.html";
-    }
-  });
 
   loadMaterials();
   function addRectRow() { createRectRow(); updateCalculations(); }

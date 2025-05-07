@@ -88,28 +88,34 @@
 </head>
 <body>
   <header>
-    <h1>Signage Calculator</h1>
-    <nav>
-      <a href="index.html">Database</a>
-      <a href="calculation.html">Calculation</a>
-      <a href="quotation.html">Quotation</a>
-      <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+    <div>
+      <strong>Signage Calculator</strong>
+      <span class="nav-links">
+        <a href="index.html">Database</a>
+        <a href="calculation.html">Calculation</a>
+        <a href="quotation.html">Quotation</a>
+        <a href="#">More ▼</a>
+      </span>
+    </div>
+    <div>
+      <span id="userEmail" class="auth-status"></span>
       <button onclick="logout()">Logout</button>
-    </nav>
+      <button class="theme-toggle" id="themeToggle">🌗</button>
+    </div>
   </header>
   <div class="container">
     <h2>Rectangular Layers</h2>
     <table id="rectTable">
       <thead>
         <tr>
-          <th>Width (m)</th>
-          <th>Height (m)</th>
-          <th>Depth (m)</th>
+          <th>Length (mm)</th>
+          <th>Width (mm)</th>
+          <th>Depth (mm)</th>
           <th>Category</th>
           <th>Material</th>
           <th>Area</th>
-          <th>Price</th>
-          <th>Cost</th>
+          <th>Price (QR)</th>
+          <th>Cost (QR)</th>
           <th>Remove</th>
         </tr>
       </thead>
@@ -121,12 +127,13 @@
     <table id="circTable">
       <thead>
         <tr>
-          <th>Width (m)</th>
+          <th>Diameter (mm)</th>
+          <th>Thickness/depth (mm)</th>
           <th>Category</th>
           <th>Material</th>
           <th>Area</th>
-          <th>Price</th>
-          <th>Cost</th>
+          <th>Price (QR)</th>
+          <th>Cost (QR)</th>
           <th>Remove</th>
         </tr>
       </thead>
@@ -138,7 +145,7 @@
       <p>Total Rectangular Area (m²): <span id="totalRectM2">0</span></p>
       <p>Total Rectangular Volume (m³): <span id="totalRectM3">0</span></p>
       <p>Total Circular Area (m²): <span id="totalCircArea">0</span></p>
-      <p>Total Material Cost: <span id="totalMaterialCost">0</span></p>
+      <p>Total Material Cost (QR): <span id="totalMaterialCost">0</span></p>
     </div>
   </div>
 
@@ -184,8 +191,8 @@
     function createRectRow() {
       const row = document.createElement("tr");
       row.innerHTML = `
+        <td><input type="number" step="0.01" class="length" /></td>
         <td><input type="number" step="0.01" class="width" /></td>
-        <td><input type="number" step="0.01" class="height" /></td>
         <td><input type="number" step="0.01" class="depth" /></td>
         <td><select class="category" onchange="updateMaterialOptions(this)"></select></td>
         <td><select class="material" onchange="updateCalculations()"></select></td>
@@ -201,7 +208,8 @@
     function createCircRow() {
       const row = document.createElement("tr");
       row.innerHTML = `
-        <td><input type="number" step="0.01" class="width" /></td>
+        <td><input type="number" step="0.01" class="diameter" /></td>
+        <td><input type="number" step="0.01" class="thickness" /></td>
         <td><select class="category" onchange="updateMaterialOptions(this)"></select></td>
         <td><select class="material" onchange="updateCalculations()"></select></td>
         <td class="area">0</td>
@@ -242,14 +250,14 @@
       let totalRectM2 = 0, totalRectM3 = 0, totalCircArea = 0, totalCost = 0;
 
       document.querySelectorAll("#rectTable tbody tr").forEach(row => {
+        const l = parseFloat(row.querySelector(".lenght").value) || 0;
         const w = parseFloat(row.querySelector(".width").value) || 0;
-        const h = parseFloat(row.querySelector(".height").value) || 0;
         const d = parseFloat(row.querySelector(".depth").value) || 0;
         const cat = row.querySelector(".category").value;
         const mat = row.querySelector(".material").value;
         const price = materials[cat]?.[mat] || 0;
-        const area = w * h;
-        const volume = area * d;
+        const area = (l * w)/1000000;
+        const volume = ((l*w)+(d*w*2)+(l*d*2))1000000;
         const cost = price * (d > 0 ? volume : area);
         row.querySelector(".area").textContent = d > 0 ? volume.toFixed(2) : area.toFixed(2);
         row.querySelector(".price").textContent = price.toFixed(2);
@@ -260,11 +268,12 @@
       });
 
       document.querySelectorAll("#circTable tbody tr").forEach(row => {
-        const w = parseFloat(row.querySelector(".width").value) || 0;
+        const d = parseFloat(row.querySelector(".diameter").value) || 0;
+        const t = parseFloat(row.querySelector(".thickness").value) || 0;
         const cat = row.querySelector(".category").value;
         const mat = row.querySelector(".material").value;
         const price = materials[cat]?.[mat] || 0;
-        const area = Math.PI * Math.pow(w / 2, 2);
+        const area = ((Math.PI * Math.pow(diameter / 2, 2) * 2) + (Math.PI * diameter * thickness)) / 1000000;
         const cost = price * area;
         row.querySelector(".area").textContent = area.toFixed(2);
         row.querySelector(".price").textContent = price.toFixed(2);

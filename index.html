@@ -1,288 +1,313 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator - Material Database</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" />
+  <title>Signage Calculator – Material Database</title>
   <style>
-    :root {
-      --bg-light: #f4f4f4;
-      --bg-dark: #1e1e1e;
-      --text-light: #000;
-      --text-dark: #fff;
-      --primary: #1976d2;
-      --secondary: #e3f2fd;
-      --table-header-bg: #1976d2;
-      --table-header-text: white;
-    }
-
-    [data-theme="dark"] {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-    }
-
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: var(--bg-light);
-      color: var(--text-light);
+      background-color: var(--bg);
+      color: var(--text);
       transition: background-color 0.3s, color 0.3s;
     }
-
-    [data-theme="dark"] body {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
     }
-
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #ffffff;
+    }
     header {
+      background-color: #6200ea;
+      color: white;
+      padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: var(--primary);
-      color: white;
-      padding: 1rem 2rem;
     }
-
     header h1 {
-      font-size: 1.5rem;
       margin: 0;
+      font-size: 1.2rem;
     }
-
-    nav {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
-
-    nav a, nav button {
+    nav a {
+      margin: 0 0.5rem;
       color: white;
-      background: none;
-      border: none;
+      text-decoration: none;
+    }
+    .theme-toggle {
       cursor: pointer;
-      font-size: 1rem;
-    }
-
-    nav a:hover, nav button:hover {
-      text-decoration: underline;
-    }
-
-    main {
-      padding: 2rem;
-    }
-
-    .tabs {
-      margin-bottom: 1rem;
-    }
-
-    .tabs button {
-      margin-right: 0.5rem;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
+      padding: 0.2rem 0.6rem;
+      background-color: #3700b3;
       border: none;
-      background-color: var(--primary);
       color: white;
       border-radius: 4px;
     }
-
-    .tabs button.active {
-      background-color: #004ba0;
+    .container {
+      padding: 1rem;
+      max-width: 1000px;
+      margin: auto;
     }
-
+    h2 {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 0.3rem;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
     }
-
     th, td {
+      border: 1px solid var(--text);
       padding: 0.5rem;
-      border: 1px solid #ccc;
-      text-align: left;
+      text-align: center;
     }
-
-    th {
-      background-color: var(--table-header-bg);
-      color: var(--table-header-text);
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-
-    .filter-row input {
-      width: 100%;
-      padding: 0.25rem;
-    }
-
-    .admin-controls button {
-      margin-right: 0.5rem;
-    }
-
-    .dark-toggle {
+    button {
+      margin-top: 1rem;
+      padding: 0.4rem 1rem;
+      background-color: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-      font-size: 1rem;
+    }
+    select, input[type="number"] {
+      width: 100%;
+    }
+    .totals {
+      margin-top: 1rem;
+      font-weight: bold;
     }
   </style>
 </head>
-<body>
+<body class="dark">
   <header>
-    <h1>Signage Calculator</h1>
+	<h1>Signage Calculator</h1>
     <nav>
       <a href="index.html">Database</a>
       <a href="calculation.html">Calculation</a>
       <a href="quotation.html">Quotation</a>
-      <button id="theme-toggle" class="dark-toggle">Toggle Theme</button>
-      <button id="logout">Logout</button>
-    </nav>
+	  <a href="#">More ▼</a>
+      <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+      <button onclick="logout()">Logout</button>
+	</nav>
   </header>
 
-  <main>
-    <div class="tabs" id="categoryTabs"></div>
-    <div id="materialTableContainer"></div>
-  </main>
+  <div class="tabs" id="tabs"></div>
+  <div id="tableWrapper" class="table-wrapper"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
     const firebaseConfig = {
-      apiKey: "AIzaSyCUtSMPkEydMHGmwCivIBocIbRf3Ot2Vpo",
-      authDomain: "signage-calculator.firebaseapp.com",
-      databaseURL: "https://signage-calculator-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "signage-calculator",
-      storageBucket: "signage-calculator.appspot.com",
-      messagingSenderId: "22460478102",
-      appId: "1:22460478102:web:e75e5a1324f2112464a7b7"
+      apiKey: "AIzaSyCXtiSnNBHs1NQXwL6vrK-U71veeMpIpXQ",
+      authDomain: "signagematerialdatabaseapp.firebaseapp.com",
+      databaseURL: "https://signagematerialdatabaseapp-default-rtdb.firebaseio.com",
+      projectId: "signagematerialdatabaseapp",
+      storageBucket: "signagematerialdatabaseapp.appspot.com",
+      messagingSenderId: "276886100857",
+      appId: "1:276886100857:web:ec1b93f74995aa30e1ada8"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-    const logoutBtn = document.getElementById("logout");
-    logoutBtn.addEventListener("click", () => {
+    let isAdmin = false;
+    const adminEmail = "admin@sc.com"; // ← Replace with your actual admin email
+
+    const headers = ["material_code", "material_name", "material_price", "unit", "price_per_unit", "unit2"];
+    const tabs = document.getElementById("tabs");
+    const tableWrapper = document.getElementById("tableWrapper");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) return location.href = "login.html";
+      isAdmin = user.email === adminEmail;
+      document.getElementById("userEmail").textContent = `Logged in as: ${user.email}`;
+      fetchCategories();
+    });
+
+    function logout() {
       auth.signOut().then(() => {
         window.location.href = "login.html";
       });
-    });
+    }
 
-    const themeToggle = document.getElementById("theme-toggle");
+    // Theme toggle
+    const themeToggle = document.getElementById("themeToggle");
     themeToggle.addEventListener("click", () => {
-      const theme = document.documentElement.getAttribute("data-theme");
-      const newTheme = theme === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", newTheme);
-      localStorage.setItem("theme", newTheme);
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
     });
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+    }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const savedTheme = localStorage.getItem("theme") || "light";
-      document.documentElement.setAttribute("data-theme", savedTheme);
+    function fetchCategories() {
+      onValue(ref(db), (snapshot) => {
+        const data = snapshot.val();
+        if (!data) return;
 
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          user.getIdTokenResult().then(idTokenResult => {
-            const isAdmin = idTokenResult.claims.admin || false;
-            loadCategories(isAdmin);
-          });
-        } else {
-          window.location.href = "login.html";
-        }
-      });
-    });
+        tabs.innerHTML = "";
+        tableWrapper.innerHTML = "";
 
-    function loadCategories(isAdmin) {
-      const tabsContainer = document.getElementById("categoryTabs");
-      db.ref("materials").once("value", snapshot => {
-        const categories = Object.keys(snapshot.val() || {});
-        categories.forEach((category, index) => {
-          const tab = document.createElement("button");
-          tab.textContent = category;
-          if (index === 0) tab.classList.add("active");
-          tab.addEventListener("click", () => {
-            document.querySelectorAll(".tabs button").forEach(btn => btn.classList.remove("active"));
-            tab.classList.add("active");
-            renderTable(category, isAdmin);
-          });
-          tabsContainer.appendChild(tab);
-        });
-
+        const categories = Object.keys(data);
         if (categories.length > 0) {
-          renderTable(categories[0], isAdmin);
+          const firstCategory = categories[0];
+          createCategoryTable(firstCategory, data[firstCategory]);
+          createCategoryTabs(categories);
         }
       });
     }
 
-    function renderTable(category, isAdmin) {
-      const container = document.getElementById("materialTableContainer");
-      db.ref(`materials/${category}`).once("value", snapshot => {
-        const materials = snapshot.val();
-        if (!materials) {
-          container.innerHTML = "<p>No materials found.</p>";
-          return;
-        }
+    function createCategoryTabs(categories) {
+      categories.forEach((cat, index) => {
+        const tab = document.createElement("div");
+        tab.className = "tab" + (index === 0 ? " active" : "");
+        tab.textContent = cat;
+        tab.onclick = () => showCategory(cat);
+        tabs.appendChild(tab);
+      });
+    }
 
-        const table = document.createElement("table");
-        const thead = document.createElement("thead");
-        const tbody = document.createElement("tbody");
+    function createCategoryTable(category, materials) {
+      const wrapper = document.createElement("div");
+      wrapper.id = "table-" + category;
+      tableWrapper.appendChild(wrapper);
 
-        const headers = ["Code", "Name", "Price", "Unit", "Price/Unit", "Unit2"];
-        if (isAdmin) headers.push("Actions");
+      const headerRow = document.createElement("div");
+      headerRow.className = "header-row";
+      headers.forEach((h) => {
+        const div = document.createElement("div");
+        div.textContent = h;
+        headerRow.appendChild(div);
+      });
+      const actionHead = document.createElement("div");
+      actionHead.textContent = "Action";
+      headerRow.appendChild(actionHead);
+      wrapper.appendChild(headerRow);
 
-        const headerRow = document.createElement("tr");
-        headers.forEach(h => {
-          const th = document.createElement("th");
-          th.textContent = h;
-          headerRow.appendChild(th);
+      const filterRow = document.createElement("div");
+      filterRow.className = "filter-row";
+      headers.forEach((_, i) => {
+        const div = document.createElement("div");
+        const input = document.createElement("input");
+        input.placeholder = "Filter...";
+        input.oninput = () => filterTable(wrapper, i, input.value);
+        div.appendChild(input);
+        filterRow.appendChild(div);
+      });
+      filterRow.appendChild(document.createElement("div")); // For action col
+      wrapper.appendChild(filterRow);
+
+      const rowsContainer = document.createElement("div");
+      wrapper.appendChild(rowsContainer);
+
+      Object.entries(materials).forEach(([key, data]) => {
+        rowsContainer.appendChild(createRow(category, key, data));
+      });
+
+      if (isAdmin) {
+        const newRow = document.createElement("div");
+        newRow.className = "row";
+        const inputs = headers.map(() => {
+          const div = document.createElement("div");
+          const input = document.createElement("input");
+          input.style.width = "100%";
+          div.appendChild(input);
+          newRow.appendChild(div);
+          return input;
         });
-        thead.appendChild(headerRow);
+        const action = document.createElement("div");
+        const btn = document.createElement("button");
+        btn.textContent = "Add";
+        btn.onclick = () => {
+          const newData = {};
+          headers.forEach((h, i) => newData[h] = inputs[i].value);
+          push(ref(db, `${category}`), newData);
+        };
+        action.appendChild(btn);
+        newRow.appendChild(action);
+        rowsContainer.appendChild(newRow);
+      }
+    }
 
-        const filterRow = document.createElement("tr");
-        headers.forEach(h => {
-          const th = document.createElement("th");
-          if (h !== "Actions") {
-            const input = document.createElement("input");
-            input.setAttribute("placeholder", `Filter ${h}`);
-            input.addEventListener("input", () => {
-              const filters = Array.from(filterRow.querySelectorAll("input")).map(i => i.value.toLowerCase());
-              Array.from(tbody.rows).forEach(row => {
-                row.style.display = Array.from(row.cells).slice(0, filters.length).every((cell, i) => {
-                  return cell.textContent.toLowerCase().includes(filters[i]);
-                }) ? "" : "none";
-              });
+    function createRow(category, key, data) {
+      const row = document.createElement("div");
+      row.className = "row";
+      const cells = headers.map(h => {
+        const div = document.createElement("div");
+        div.textContent = data[h] || "";
+        row.appendChild(div);
+        return div;
+      });
+
+      const actionDiv = document.createElement("div");
+      actionDiv.className = "action-cell";
+
+      if (isAdmin) {
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        let editing = false;
+
+        editBtn.onclick = () => {
+          editing = !editing;
+          if (editing) {
+            row.classList.add("editing");
+            cells.forEach(c => {
+              const input = document.createElement("input");
+              input.value = c.textContent;
+              c.innerHTML = "";
+              c.appendChild(input);
             });
-            th.appendChild(input);
-          }
-          filterRow.appendChild(th);
-        });
-        thead.appendChild(filterRow);
-
-        Object.values(materials).forEach(mat => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${mat.material_code}</td>
-            <td>${mat.material_name}</td>
-            <td>${mat.material_price}</td>
-            <td>${mat.unit}</td>
-            <td>${mat.price_per_unit}</td>
-            <td>${mat.unit2}</td>
-          `;
-          if (isAdmin) {
-            const actions = document.createElement("td");
-            actions.classList.add("admin-controls");
-            const editBtn = document.createElement("button");
+            editBtn.textContent = "Save";
+          } else {
+            const updated = {};
+            headers.forEach((h, i) => {
+              updated[h] = cells[i].querySelector("input").value;
+              cells[i].textContent = updated[h];
+            });
+            update(ref(db, `${category}/${key}`), updated);
+            row.classList.remove("editing");
             editBtn.textContent = "Edit";
-            const delBtn = document.createElement("button");
-            delBtn.textContent = "Delete";
-            actions.append(editBtn, delBtn);
-            row.appendChild(actions);
           }
-          tbody.appendChild(row);
-        });
+        };
 
-        table.append(thead, tbody);
-        container.innerHTML = "";
-        container.appendChild(table);
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => {
+          if (confirm("Delete this item?")) remove(ref(db, `${category}/${key}`));
+        };
+
+        actionDiv.appendChild(editBtn);
+        actionDiv.appendChild(delBtn);
+      }
+      row.appendChild(actionDiv);
+      return row;
+    }
+
+    function filterTable(wrapper, index, value) {
+      const rows = wrapper.querySelectorAll(".row");
+      rows.forEach(row => {
+        const cell = row.children[index];
+        if (!cell || cell.querySelector("input")) return;
+        row.style.display = cell.textContent.toLowerCase().includes(value.toLowerCase()) ? "" : "none";
+      });
+    }
+
+    function showCategory(name) {
+      tableWrapper.innerHTML = "";
+      const category = name;
+      onValue(ref(db, category), (snapshot) => {
+        const materials = snapshot.val();
+        createCategoryTable(category, materials);
       });
     }
   </script>

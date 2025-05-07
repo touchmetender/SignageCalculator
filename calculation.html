@@ -1,171 +1,341 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Signage Calculator - Calculation</title>
+  <title>Calculation - Signage Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
   <style>
-    body.light-mode {
-      background-color: #fff;
-      color: #000;
-    }
-    body.dark-mode {
-      background-color: #121212;
-      color: #fff;
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      color: #333;
+      transition: background-color 0.3s, color 0.3s;
     }
     header {
+      background-color: #2196F3;
+      color: white;
+      padding: 1rem;
       display: flex;
       justify-content: space-between;
-      padding: 10px 20px;
-      background-color: #333;
-      color: white;
+      align-items: center;
     }
-    header a {
+    header h1 {
+      margin: 0;
+    }
+    nav a {
+      margin-left: 1rem;
       color: white;
-      margin: 0 10px;
       text-decoration: none;
     }
-    main {
-      padding: 20px;
+    .dark-mode {
+      background-color: #222;
+      color: #f4f4f4;
     }
-    select, input {
-      margin: 5px;
-      padding: 5px;
+    .container {
+      padding: 2rem;
     }
-    .row {
-      margin-bottom: 10px;
+    .section {
+      margin-bottom: 3rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    select, input[type="number"] {
+      width: 100px;
+    }
+    .totals {
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    .toggle-theme {
+      cursor: pointer;
+      background: none;
+      border: 1px solid white;
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <header>
+    <h1>Signage Calculator</h1>
     <div>
-      <a href="index.html">Database</a>
-      <a href="calculation.html">Calculation</a>
-    </div>
-    <div>
-      <button onclick="toggleTheme()">Toggle Theme</button>
-      <button onclick="logout()">Logout</button>
+      <nav>
+        <a href="index.html">Database</a>
+        <a href="calculation.html">Calculation</a>
+        <a href="quotation.html">Quotation</a>
+        <a href="#" onclick="logout()">Logout</a>
+        <button class="toggle-theme" onclick="toggleTheme()">Toggle Theme</button>
+      </nav>
     </div>
   </header>
 
-  <main>
-    <h2>Material Cost Calculator</h2>
-    <div id="materialRows"></div>
-    <button onclick="addRow()">Add Rectangular Layer</button>
-    <p><strong>Total Cost:</strong> <span id="totalCost">0</span></p>
-  </main>
+  <div class="container">
+    <div class="section" id="rectangular-section">
+      <h2>Rectangular Layer Dimensions (mm)</h2>
+      <button onclick="addRectRow()">Add Rectangular Layer</button>
+      <table id="rect-table">
+        <thead>
+          <tr>
+            <th>Width (mm)</th>
+            <th>Height (mm)</th>
+            <th>Depth (mm)</th>
+            <th>Area</th>
+            <th>Category</th>
+            <th>Material</th>
+            <th>Price</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="totals" id="rect-total">Total Rectangular Cost: 0</div>
+    </div>
+
+    <div class="section" id="circular-section">
+      <h2>Circular Layer Dimensions (mm)</h2>
+      <button onclick="addCircRow()">Add Circular Layer</button>
+      <table id="circ-table">
+        <thead>
+          <tr>
+            <th>Diameter (mm)</th>
+            <th>Area</th>
+            <th>Category</th>
+            <th>Material</th>
+            <th>Price</th>
+            <th>Cost</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="totals" id="circ-total">Total Circular Cost: 0</div>
+    </div>
+
+    <div class="totals" id="total-cost">Total Material Cost: 0</div>
+  </div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <script>
+    // Firebase configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyBO6HFNOs6ksKpjDZUE49q_AkAx8bVNkIM",
+      apiKey: "AIzaSyC6E9D2VEdOPDUPGQZ0ab3HCOOYmUjcNAs",
       authDomain: "signage-calc.firebaseapp.com",
-      databaseURL: "https://signage-calc-default-rtdb.firebaseio.com",
+      databaseURL: "https://signage-calc-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "signage-calc",
       storageBucket: "signage-calc.appspot.com",
-      messagingSenderId: "698642307837",
-      appId: "1:698642307837:web:34d7a84dc270b49ff9c72c"
+      messagingSenderId: "2342045355",
+      appId: "1:2342045355:web:a9a991c4bfa0216b5e5ec9"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const auth = firebase.auth();
 
-    let materialData = {};
+    let materials = {};
 
-    auth.onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged(user => {
       if (!user) window.location.href = "login.html";
     });
 
-    function toggleTheme() {
-      const current = localStorage.getItem("theme") === "dark" ? "light" : "dark";
-      localStorage.setItem("theme", current);
-      applyTheme();
-    }
-
-    function applyTheme() {
-      document.body.className = localStorage.getItem("theme") === "dark" ? "dark-mode" : "light-mode";
-    }
-
-    window.onload = function() {
-      applyTheme();
-      db.ref("materials").once("value", snapshot => {
-        materialData = snapshot.val();
-        addRow();
-      });
-    };
-
     function logout() {
-      auth.signOut().then(() => window.location.href = "login.html");
+      firebase.auth().signOut();
     }
 
-    function addRow() {
-      const rowDiv = document.createElement("div");
-      rowDiv.className = "row";
-      rowDiv.innerHTML = `
-        Width (m): <input type="number" class="width" step="0.01" />
-        Height (m): <input type="number" class="height" step="0.01" />
-        Category: <select class="category">${getCategoryOptions()}</select>
-        Material: <select class="material"></select>
-        <span class="cost">Cost: 0</span>
-        <hr/>
-      `;
-      document.getElementById("materialRows").appendChild(rowDiv);
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle("dark-mode");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    }
 
-      const categorySelect = rowDiv.querySelector(".category");
-      const materialSelect = rowDiv.querySelector(".material");
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark-mode");
+    }
 
-      categorySelect.onchange = () => {
-        updateMaterialOptions(categorySelect, materialSelect);
-        calculateRow(rowDiv);
+    function loadMaterials() {
+      firebase.database().ref('materials').once('value', snapshot => {
+        materials = snapshot.val();
+        addRectRow();
+        addCircRow();
+      });
+    }
+
+    function createCategoryOptions() {
+      const select = document.createElement("select");
+      for (let category in materials) {
+        const opt = document.createElement("option");
+        opt.value = category;
+        opt.textContent = category;
+        select.appendChild(opt);
+      }
+      return select;
+    }
+
+    function createMaterialOptions(category, priceCell, costCell, areaCell) {
+      const select = document.createElement("select");
+      const updateOptions = () => {
+        select.innerHTML = "";
+        if (materials[category.value]) {
+          for (let key in materials[category.value]) {
+            const material = materials[category.value][key];
+            const opt = document.createElement("option");
+            opt.value = key;
+            opt.textContent = material.material_name;
+            opt.dataset.price = material.material_price;
+            select.appendChild(opt);
+          }
+        }
+        select.dispatchEvent(new Event("change"));
       };
+      category.addEventListener("change", updateOptions);
+      select.addEventListener("change", () => {
+        const price = parseFloat(select.selectedOptions[0].dataset.price) || 0;
+        priceCell.textContent = price.toFixed(2);
+        const area = parseFloat(areaCell.textContent) || 0;
+        costCell.textContent = (price * area).toFixed(2);
+        updateTotals();
+      });
+      return select;
+    }
 
-      materialSelect.onchange = () => calculateRow(rowDiv);
+    function addRectRow() {
+      const tbody = document.querySelector("#rect-table tbody");
+      const tr = document.createElement("tr");
 
-      rowDiv.querySelectorAll("input").forEach(input => {
-        input.oninput = () => calculateRow(rowDiv);
+      const width = document.createElement("input");
+      width.type = "number";
+      width.min = 0;
+
+      const height = document.createElement("input");
+      height.type = "number";
+      height.min = 0;
+
+      const depth = document.createElement("input");
+      depth.type = "number";
+      depth.min = 0;
+
+      const areaCell = document.createElement("td");
+      const priceCell = document.createElement("td");
+      const costCell = document.createElement("td");
+
+      const category = createCategoryOptions();
+      const material = createMaterialOptions(category, priceCell, costCell, areaCell);
+
+      function calculateAreaAndCost() {
+        const w = parseFloat(width.value) || 0;
+        const h = parseFloat(height.value) || 0;
+        const d = parseFloat(depth.value) || 0;
+        let area = 0;
+
+        if (d > 0) {
+          area = (w * h * d) / 1_000_000_000; // m³
+        } else {
+          area = (w * h) / 1_000_000; // m²
+        }
+
+        areaCell.textContent = area.toFixed(4);
+        const price = parseFloat(material.selectedOptions[0]?.dataset.price) || 0;
+        costCell.textContent = (price * area).toFixed(2);
+        updateTotals();
+      }
+
+      [width, height, depth].forEach(input => input.addEventListener("input", calculateAreaAndCost));
+
+      [width, height, depth].forEach(input => {
+        const td = document.createElement("td");
+        td.appendChild(input);
+        tr.appendChild(td);
       });
 
-      categorySelect.dispatchEvent(new Event("change"));
+      tr.appendChild(areaCell);
+
+      const catTd = document.createElement("td");
+      catTd.appendChild(category);
+      tr.appendChild(catTd);
+
+      const matTd = document.createElement("td");
+      matTd.appendChild(material);
+      tr.appendChild(matTd);
+
+      tr.appendChild(priceCell);
+      tr.appendChild(costCell);
+
+      tbody.appendChild(tr);
+      category.dispatchEvent(new Event("change"));
     }
 
-    function getCategoryOptions() {
-      return Object.keys(materialData).map(cat => `<option value="${cat}">${cat}</option>`).join("");
+    function addCircRow() {
+      const tbody = document.querySelector("#circ-table tbody");
+      const tr = document.createElement("tr");
+
+      const diameter = document.createElement("input");
+      diameter.type = "number";
+      diameter.min = 0;
+
+      const areaCell = document.createElement("td");
+      const priceCell = document.createElement("td");
+      const costCell = document.createElement("td");
+
+      const category = createCategoryOptions();
+      const material = createMaterialOptions(category, priceCell, costCell, areaCell);
+
+      function calculateAreaAndCost() {
+        const d = parseFloat(diameter.value) || 0;
+        const area = Math.PI * Math.pow(d / 2, 2) / 1_000_000;
+        areaCell.textContent = area.toFixed(4);
+        const price = parseFloat(material.selectedOptions[0]?.dataset.price) || 0;
+        costCell.textContent = (price * area).toFixed(2);
+        updateTotals();
+      }
+
+      diameter.addEventListener("input", calculateAreaAndCost);
+
+      const td1 = document.createElement("td");
+      td1.appendChild(diameter);
+      tr.appendChild(td1);
+      tr.appendChild(areaCell);
+
+      const catTd = document.createElement("td");
+      catTd.appendChild(category);
+      tr.appendChild(catTd);
+
+      const matTd = document.createElement("td");
+      matTd.appendChild(material);
+      tr.appendChild(matTd);
+
+      tr.appendChild(priceCell);
+      tr.appendChild(costCell);
+
+      tbody.appendChild(tr);
+      category.dispatchEvent(new Event("change"));
     }
 
-    function updateMaterialOptions(categorySelect, materialSelect) {
-      const category = categorySelect.value;
-      const materials = materialData[category];
-      materialSelect.innerHTML = Object.keys(materials).map(key => {
-        const mat = materials[key];
-        return `<option value="${key}" data-price="${mat.material_price}">${mat.material_name}</option>`;
-      }).join("");
+    function updateTotals() {
+      const rectCosts = [...document.querySelectorAll("#rect-table tbody tr td:last-child")];
+      const circCosts = [...document.querySelectorAll("#circ-table tbody tr td:last-child")];
+      const rectTotal = rectCosts.reduce((sum, td) => sum + (parseFloat(td.textContent) || 0), 0);
+      const circTotal = circCosts.reduce((sum, td) => sum + (parseFloat(td.textContent) || 0), 0);
+      document.getElementById("rect-total").textContent = "Total Rectangular Cost: " + rectTotal.toFixed(2);
+      document.getElementById("circ-total").textContent = "Total Circular Cost: " + circTotal.toFixed(2);
+      document.getElementById("total-cost").textContent = "Total Material Cost: " + (rectTotal + circTotal).toFixed(2);
     }
 
-    function calculateRow(rowDiv) {
-      const width = parseFloat(rowDiv.querySelector(".width").value) || 0;
-      const height = parseFloat(rowDiv.querySelector(".height").value) || 0;
-      const area = width * height;
-      const materialSelect = rowDiv.querySelector(".material");
-      const selectedOption = materialSelect.options[materialSelect.selectedIndex];
-      const price = parseFloat(selectedOption?.getAttribute("data-price") || 0);
-      const cost = area * price;
-      rowDiv.querySelector(".cost").textContent = `Cost: ${cost.toFixed(2)}`;
-      calculateTotal();
-    }
-
-    function calculateTotal() {
-      let total = 0;
-      document.querySelectorAll(".row").forEach(row => {
-        const costText = row.querySelector(".cost").textContent;
-        const cost = parseFloat(costText.replace("Cost: ", "")) || 0;
-        total += cost;
-      });
-      document.getElementById("totalCost").textContent = total.toFixed(2);
-    }
+    loadMaterials();
   </script>
 </body>
 </html>

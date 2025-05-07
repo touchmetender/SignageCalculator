@@ -1,91 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Calculation - Signage Calculator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="assets/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Signage Calculator - Calculation</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,700&display=swap" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s, color 0.3s;
+    }
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+    }
+    body.dark {
+      --bg: #1e1e1e;
+      --text: #ffffff;
     }
     header {
-      background-color: var(--header-bg);
-      padding: 10px 20px;
+      background-color: #6200ea;
+      color: white;
+      padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     header h1 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.2rem;
     }
     nav a {
-      color: var(--text-color);
-      margin-left: 15px;
+      margin: 0 0.5rem;
+      color: white;
       text-decoration: none;
-      font-weight: bold;
     }
-    nav a.active {
-      text-decoration: underline;
-    }
-    .theme-toggle, .logout-btn {
-      margin-left: 15px;
+    .theme-toggle {
       cursor: pointer;
+      padding: 0.2rem 0.6rem;
+      background-color: #3700b3;
+      border: none;
+      color: white;
+      border-radius: 4px;
     }
-
-    main {
-      padding: 20px;
+    .container {
+      padding: 1rem;
+      max-width: 1000px;
+      margin: auto;
     }
-    .section {
-      margin-bottom: 40px;
+    h2 {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 0.3rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 0.5rem;
     }
     th, td {
-      padding: 8px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--text);
+      padding: 0.5rem;
+      text-align: center;
     }
-    th {
-      background-color: var(--header-bg);
+    button {
+      margin-top: 1rem;
+      padding: 0.4rem 1rem;
+      background-color: #6200ea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    input, select {
+    select, input[type="number"] {
       width: 100%;
-      padding: 4px;
-      background: var(--input-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
     }
-    .add-btn {
-      margin-top: 10px;
-      padding: 6px 12px;
-    }
-    .total {
-      margin-top: 10px;
+    .totals {
+      margin-top: 1rem;
       font-weight: bold;
-    }
-
-    :root {
-      --bg-color: #fff;
-      --text-color: #000;
-      --header-bg: #f0f0f0;
-      --border-color: #ccc;
-      --input-bg: #fff;
-    }
-
-    body.dark-mode {
-      --bg-color: #121212;
-      --text-color: #f0f0f0;
-      --header-bg: #1f1f1f;
-      --border-color: #444;
-      --input-bg: #1f1f1f;
     }
   </style>
 </head>
@@ -94,102 +91,217 @@
     <h1>Signage Calculator</h1>
     <nav>
       <a href="index.html">Database</a>
-      <a href="calculation.html" class="active">Calculation</a>
+      <a href="calculation.html">Calculation</a>
       <a href="quotation.html">Quotation</a>
-      <span class="theme-toggle">🌓</span>
-      <button class="logout-btn">Logout</button>
+      <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+      <button onclick="logout()">Logout</button>
     </nav>
   </header>
+  <div class="container">
+    <h2>Rectangular Layers</h2>
+    <table id="rectTable">
+      <thead>
+        <tr>
+          <th>Width (m)</th>
+          <th>Height (m)</th>
+          <th>Depth (m)</th>
+          <th>Category</th>
+          <th>Material</th>
+          <th>Area</th>
+          <th>Price</th>
+          <th>Cost</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addRectRow()">Add Rectangular Layer</button>
 
-  <main>
-    <div class="section">
-      <h2>Rectangular Layers</h2>
-      <table id="rect-table">
-        <thead>
-          <tr>
-            <th>Width (m)</th>
-            <th>Height (m)</th>
-            <th>Depth (m)</th>
-            <th>Category</th>
-            <th>Material</th>
-            <th>Area</th>
-            <th>Price</th>
-            <th>Cost</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button class="add-btn" onclick="addRectRow()">Add Rectangular Layer</button>
-      <div class="total" id="rect-total">Total: 0</div>
+    <h2>Circular Layers</h2>
+    <table id="circTable">
+      <thead>
+        <tr>
+          <th>Width (m)</th>
+          <th>Category</th>
+          <th>Material</th>
+          <th>Area</th>
+          <th>Price</th>
+          <th>Cost</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="addCircRow()">Add Circular Layer</button>
+
+    <div class="totals">
+      <p>Total Rectangular Area (m²): <span id="totalRectM2">0</span></p>
+      <p>Total Rectangular Volume (m³): <span id="totalRectM3">0</span></p>
+      <p>Total Circular Area (m²): <span id="totalCircArea">0</span></p>
+      <p>Total Material Cost: <span id="totalMaterialCost">0</span></p>
     </div>
+  </div>
 
-    <div class="section">
-      <h2>Circular Layers</h2>
-      <table id="circ-table">
-        <thead>
-          <tr>
-            <th>Diameter (m)</th>
-            <th>Category</th>
-            <th>Material</th>
-            <th>Area</th>
-            <th>Price</th>
-            <th>Cost</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button class="add-btn" onclick="addCircRow()">Add Circular Layer</button>
-      <div class="total" id="circ-total">Total: 0</div>
-    </div>
-  </main>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-  <!-- Firebase Config -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script>
+    // Firebase config
     const firebaseConfig = {
-      apiKey: "AIzaSyDgBCcOoz9VZ0nCmZzA5m7IEaNMeXtH6yU",
+      apiKey: "AIzaSyDnDI7b-4AZoP3qArZx2ePJx_A4v_gVjQc",
       authDomain: "signagecalculator.firebaseapp.com",
       databaseURL: "https://signagecalculator-default-rtdb.firebaseio.com",
       projectId: "signagecalculator",
       storageBucket: "signagecalculator.appspot.com",
-      messagingSenderId: "74001127705",
-      appId: "1:74001127705:web:4a62e78c11c842d2bd7b8c"
+      messagingSenderId: "690172015156",
+      appId: "1:690172015156:web:8cb6d0f9d6b0f2a6b37910"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
-  </script>
 
-  <!-- Main Script -->
-  <script src="assets/calculation.js"></script>
-  <script>
-    // Theme toggle
-    const themeToggle = document.querySelector('.theme-toggle');
-    function applyTheme(theme) {
-      document.body.classList.toggle('dark-mode', theme === 'dark');
-    }
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    applyTheme(savedTheme);
-    themeToggle.addEventListener('click', () => {
-      const newTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
-      localStorage.setItem('theme', newTheme);
-      applyTheme(newTheme);
-    });
-
-    // Logout
-    document.querySelector('.logout-btn').addEventListener('click', () => {
+    function logout() {
       auth.signOut().then(() => {
         window.location.href = "login.html";
       });
-    });
+    }
 
-    // Auth check
-    auth.onAuthStateChanged(user => {
-      if (!user) window.location.href = "login.html";
+    const materials = {};
+
+    function loadMaterials() {
+      db.ref("materials").once("value").then(snapshot => {
+        snapshot.forEach(catSnap => {
+          const cat = catSnap.key;
+          materials[cat] = {};
+          catSnap.forEach(matSnap => {
+            const mat = matSnap.val();
+            materials[cat][mat.material_name] = mat.material_price;
+          });
+        });
+      });
+    }
+
+    function createRectRow() {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="number" step="0.01" class="width" /></td>
+        <td><input type="number" step="0.01" class="height" /></td>
+        <td><input type="number" step="0.01" class="depth" /></td>
+        <td><select class="category" onchange="updateMaterialOptions(this)"></select></td>
+        <td><select class="material" onchange="updateCalculations()"></select></td>
+        <td class="area">0</td>
+        <td class="price">0</td>
+        <td class="cost">0</td>
+        <td><button onclick="removeRow(this)">X</button></td>
+      `;
+      document.querySelector("#rectTable tbody").appendChild(row);
+      fillCategoryDropdown(row.querySelector(".category"), row.querySelector(".material"));
+    }
+
+    function createCircRow() {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td><input type="number" step="0.01" class="width" /></td>
+        <td><select class="category" onchange="updateMaterialOptions(this)"></select></td>
+        <td><select class="material" onchange="updateCalculations()"></select></td>
+        <td class="area">0</td>
+        <td class="price">0</td>
+        <td class="cost">0</td>
+        <td><button onclick="removeRow(this)">X</button></td>
+      `;
+      document.querySelector("#circTable tbody").appendChild(row);
+      fillCategoryDropdown(row.querySelector(".category"), row.querySelector(".material"));
+    }
+
+    function fillCategoryDropdown(catSelect, matSelect) {
+      catSelect.innerHTML = `<option value="">Select</option>`;
+      Object.keys(materials).forEach(cat => {
+        catSelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+      });
+    }
+
+    function updateMaterialOptions(select) {
+      const row = select.closest("tr");
+      const matSelect = row.querySelector(".material");
+      const cat = select.value;
+      matSelect.innerHTML = `<option value="">Select</option>`;
+      if (materials[cat]) {
+        Object.keys(materials[cat]).forEach(mat => {
+          matSelect.innerHTML += `<option value="${mat}">${mat}</option>`;
+        });
+      }
+      updateCalculations();
+    }
+
+    function removeRow(btn) {
+      btn.closest("tr").remove();
+      updateCalculations();
+    }
+
+    function updateCalculations() {
+      let totalRectM2 = 0, totalRectM3 = 0, totalCircArea = 0, totalCost = 0;
+
+      document.querySelectorAll("#rectTable tbody tr").forEach(row => {
+        const w = parseFloat(row.querySelector(".width").value) || 0;
+        const h = parseFloat(row.querySelector(".height").value) || 0;
+        const d = parseFloat(row.querySelector(".depth").value) || 0;
+        const cat = row.querySelector(".category").value;
+        const mat = row.querySelector(".material").value;
+        const price = materials[cat]?.[mat] || 0;
+        const area = w * h;
+        const volume = area * d;
+        const cost = price * (d > 0 ? volume : area);
+        row.querySelector(".area").textContent = d > 0 ? volume.toFixed(2) : area.toFixed(2);
+        row.querySelector(".price").textContent = price.toFixed(2);
+        row.querySelector(".cost").textContent = cost.toFixed(2);
+        totalRectM2 += d === 0 ? area : 0;
+        totalRectM3 += d > 0 ? volume : 0;
+        totalCost += cost;
+      });
+
+      document.querySelectorAll("#circTable tbody tr").forEach(row => {
+        const w = parseFloat(row.querySelector(".width").value) || 0;
+        const cat = row.querySelector(".category").value;
+        const mat = row.querySelector(".material").value;
+        const price = materials[cat]?.[mat] || 0;
+        const area = Math.PI * Math.pow(w / 2, 2);
+        const cost = price * area;
+        row.querySelector(".area").textContent = area.toFixed(2);
+        row.querySelector(".price").textContent = price.toFixed(2);
+        row.querySelector(".cost").textContent = cost.toFixed(2);
+        totalCircArea += area;
+        totalCost += cost;
+      });
+
+      document.getElementById("totalRectM2").textContent = totalRectM2.toFixed(2);
+      document.getElementById("totalRectM3").textContent = totalRectM3.toFixed(2);
+      document.getElementById("totalCircArea").textContent = totalCircArea.toFixed(2);
+      document.getElementById("totalMaterialCost").textContent = totalCost.toFixed(2);
+    }
+
+    function addRectRow() {
+      createRectRow();
+    }
+
+    function addCircRow() {
+      createCircRow();
+    }
+
+    // Theme toggle
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    });
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+    }
+
+    window.addEventListener("input", updateCalculations);
+    window.addEventListener("load", () => {
+      loadMaterials();
+      createRectRow();
+      createCircRow();
     });
   </script>
 </body>

@@ -100,7 +100,7 @@
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           sessionStorage.setItem('user', email);
-          window.location.href = "index.html";
+          window.location.href = "calculation.html";
         })
         .catch(error => {
           const errorMsg = document.getElementById("error");

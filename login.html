@@ -1,3 +1,6 @@
+<?php
+// Optional PHP logic can go here, like session checks or includes
+?>
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -100,7 +103,7 @@
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           sessionStorage.setItem('user', email);
-          window.location.href = "index.html";
+          window.location.href = "index.php"; // updated if your index is also PHP
         })
         .catch(error => {
           const errorMsg = document.getElementById("error");
